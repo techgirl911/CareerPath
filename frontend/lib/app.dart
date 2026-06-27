@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'routes/app_routes.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'CareerPath',
       theme: ThemeData(
         primarySwatch: Colors.indigo,
@@ -53,31 +54,8 @@ class MyApp extends StatelessWidget {
         ),
       ),
       themeMode: ThemeMode.system,
-      home: const MyHomePage(title: 'CareerPath'),
+      routerConfig: AppRoutes.router,
       debugShowCheckedModeBanner: false,
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('CareerPath'),
-      ),
-      body: const Center(
-        child: Text('Welcome to CareerPath!'),
-      ),
     );
   }
 }
