@@ -7,6 +7,7 @@ import '../screens/student_dashboard.dart';
 import '../screens/parent_dashboard.dart';
 import '../screens/admin_dashboard.dart';
 import '../screens/quiz_screen.dart';
+import '../screens/upload_results_screen.dart';
 import '../models/quiz_model.dart';
 
 class AppRoutes {
@@ -17,6 +18,7 @@ class AppRoutes {
   static const String parentDashboard = '/parent-dashboard';
   static const String adminDashboard = '/admin-dashboard';
   static const String quiz = '/quiz';
+  static const String uploadResults = '/upload-results';
 
   static final GoRouter router = GoRouter(
     initialLocation: roleSelection,
@@ -52,10 +54,8 @@ class AppRoutes {
         builder: (context, state) => const AdminDashboard(),
       ),
       GoRoute(
-        path: '$quiz/:quizId',
+        path: '\$quiz/:quizId',
         builder: (context, state) {
-          // TODO: Get quiz from service based on quizId
-          // For now, create a dummy quiz
           final dummyQuiz = Quiz(
             id: '1',
             title: 'Career Assessment 2024',
@@ -74,7 +74,12 @@ class AppRoutes {
                 quizId: '1',
                 question: 'Which skill do you excel at?',
                 questionType: 'single_choice',
-                options: ['Problem Solving', 'Communication', 'Creativity', 'Leadership'],
+                options: [
+                  'Problem Solving',
+                  'Communication',
+                  'Creativity',
+                  'Leadership'
+                ],
                 order: 2,
               ),
               QuizQuestion(
@@ -92,6 +97,10 @@ class AppRoutes {
           );
           return QuizScreen(quiz: dummyQuiz);
         },
+      ),
+      GoRoute(
+        path: uploadResults,
+        builder: (context, state) => const UploadResultsScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
