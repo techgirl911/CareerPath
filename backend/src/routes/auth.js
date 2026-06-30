@@ -1,40 +1,18 @@
 const express = require('express');
 const router = express.Router();
+const authController = require('../controllers/authController');
+const authMiddleware = require('../middleware/authMiddleware');
 
 // POST /api/auth/signup
-router.post('/signup', (req, res) => {
-  try {
-    res.json({ message: 'Signup endpoint - TODO' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+router.post('/signup', authController.signup);
 
 // POST /api/auth/login
-router.post('/login', (req, res) => {
-  try {
-    res.json({ message: 'Login endpoint - TODO' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+router.post('/login', authController.login);
 
 // POST /api/auth/logout
-router.post('/logout', (req, res) => {
-  try {
-    res.json({ message: 'Logout endpoint - TODO' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+router.post('/logout', authController.logout);
 
-// GET /api/auth/me
-router.get('/me', (req, res) => {
-  try {
-    res.json({ message: 'Get current user - TODO' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+// GET /api/auth/me (protected)
+router.get('/me', authMiddleware, authController.getCurrentUser);
 
 module.exports = router;

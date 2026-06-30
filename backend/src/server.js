@@ -22,6 +22,15 @@ app.get('/api/health', (req, res) => {
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
 
+const studentRoutes = require('./routes/student');
+app.use('/api/students', studentRoutes);
+
+const careerRoutes = require('./routes/career');
+app.use('/api/careers', careerRoutes);
+
+const quizRoutes = require('./routes/quiz');
+app.use('/api/quizzes', quizRoutes);
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
