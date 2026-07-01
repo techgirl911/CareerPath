@@ -45,22 +45,7 @@ class CareerService {
   Future<Career> getCareerById(String careerId) async {
     try {
       final response = await _dio.get(ApiEndpoints.getCareerById(careerId));
-      return Career.fromJson(response.data);
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  // Get careers by subject
-  Future<List<Career>> getCareersBySubject(String subject) async {
-    try {
-      final response = await _dio.get(
-        '${ApiEndpoints.base}/careers/subject/$subject',
-      );
-
-      return (response.data as List)
-          .map((item) => Career.fromJson(item))
-          .toList();
+      return Career.fromJson(response.data['data'] ?? response.data);
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -73,7 +58,7 @@ class CareerService {
         '${ApiEndpoints.base}/careers/$careerId/market-demand',
       );
 
-      return MarketDemand.fromJson(response.data);
+      return MarketDemand.fromJson(response.data['data'] ?? response.data);
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -87,74 +72,9 @@ class CareerService {
         queryParameters: {'limit': limit},
       );
 
-      return (response.data as List)
+      return (response.data['data'] as List)
           .map((item) => Career.fromJson(item))
           .toList();
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  // Search careers
-  Future<List<Career>> searchCareers(String query) async {
-    try {
-      final response = await _dio.get(
-        '${ApiEndpoints.base}/careers/search',
-        queryParameters: {'q': query},
-      );
-
-      return (response.data as List)
-          .map((item) => Career.fromJson(item))
-          .toList();
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  // Get market demand index
-  Future<List<MarketDemand>> getMarketDemandIndex() async {
-    try {
-      final response = await _dio.get('${ApiEndpoints.base}/market-demand');
-      return (response.data as List)
-          .map((item) => MarketDemand.fromJson(item))
-          .toList();
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  // Create career (admin only)
-  Future<Career> createCareer(Career career) async {
-    try {
-      final response = await _dio.post(
-        ApiEndpoints.getAllCareers,
-        data: career.toJson(),
-      );
-
-      return Career.fromJson(response.data);
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  // Update career (admin only)
-  Future<Career> updateCareer(String careerId, Career career) async {
-    try {
-      final response = await _dio.put(
-        ApiEndpoints.getCareerById(careerId),
-        data: career.toJson(),
-      );
-
-      return Career.fromJson(response.data);
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  // Delete career (admin only)
-  Future<void> deleteCareer(String careerId) async {
-    try {
-      await _dio.delete(ApiEndpoints.getCareerById(careerId));
     } on DioException catch (e) {
       throw _handleError(e);
     }

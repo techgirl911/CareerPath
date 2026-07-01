@@ -45,7 +45,11 @@ class AppRoutes {
         path: studentDashboard,
         builder: (context, state) {
           final userName = state.extra as String? ?? 'Student';
-          return StudentDashboard(userName: userName);
+          final studentId = state.uri.queryParameters['studentId'];
+          return StudentDashboard(
+            userName: userName,
+            studentId: studentId,
+          );
         },
       ),
       GoRoute(

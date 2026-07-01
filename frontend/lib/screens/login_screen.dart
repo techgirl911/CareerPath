@@ -57,11 +57,14 @@ class _LoginScreenState extends State<LoginScreen> {
       Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted) {
           if (user.role == 'student') {
-            context.go('/student-dashboard', extra: user.fullName);
+            context.go(
+              '${AppRoutes.studentDashboard}?studentId=${user.id}',
+              extra: user.fullName,
+            );
           } else if (user.role == 'parent') {
-            context.go('/parent-dashboard');
+            context.go(AppRoutes.parentDashboard);
           } else if (user.role == 'admin') {
-            context.go('/admin-dashboard');
+            context.go(AppRoutes.adminDashboard);
           }
         }
       });

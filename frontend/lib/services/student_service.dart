@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import '../app_constants.dart';
 import '../models/user_model.dart';
 import '../models/career_model.dart';
-import '../models/quiz_model.dart';
 import '../models/academic_model.dart';
 
 class StudentService {
@@ -34,8 +33,9 @@ class StudentService {
   // Get academic profile
   Future<StudentAcademicProfile> getAcademicProfile(String studentId) async {
     try {
-      final response = await _dio
-          .get('${ApiEndpoints.base}/students/$studentId/academic-profile');
+      final response = await _dio.get(
+        '${ApiEndpoints.base}/students/$studentId/academic-profile',
+      );
       return StudentAcademicProfile.fromJson(response.data);
     } on DioException catch (e) {
       throw _handleError(e);
@@ -62,86 +62,9 @@ class StudentService {
     try {
       final response =
           await _dio.get(ApiEndpoints.getRecommendations(studentId));
-      return (response.data as List)
+      return (response.data['recommendations'] as List)
           .map((item) => CareerRecommendation.fromJson(item))
           .toList();
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  // Get quiz results
-  Future<List<QuizResult>> getQuizResults(String studentId) async {
-    try {
-      final response = await _dio
-          .get('${ApiEndpoints.base}/students/$studentId/quiz-results');
-      return (response.data as List)
-          .map((item) => QuizResult.fromJson(item))
-          .toList();
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  // Submit quiz
-  Future<QuizResult> submitQuiz({
-    required String studentId,
-    required String quizId,
-    required Map<String, dynamic> answers,
-  }) async {
-    try {
-      final response = await _dio.post(
-        ApiEndpoints.submitQuiz(studentId),
-        data: {
-          'quizId': quizId,
-          'answers': answers,
-        },
-      );
-
-      return QuizResult.fromJson(response.data);
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  // Upload document
-  Future<DocumentUpload> uploadDocument({
-    required String studentId,
-    required String documentType,
-    required String filePath,
-    required String fileName,
-  }) async {
-    try {
-      final formData = FormData.fromMap({
-        'studentId': studentId,
-        'documentType': documentType,
-        'file': await MultipartFile.fromFile(
-          filePath,
-          filename: fileName,
-        ),
-      });
-
-      final response = await _dio.post(
-        '${ApiEndpoints.base}/students/upload-document',
-        data: formData,
-      );
-
-      return DocumentUpload.fromJson(response.data);
-    } on DioException catch (e) {
-      throw _handleError(e);
-    }
-  }
-
-  // Update profile
-  Future<void> updateProfile({
-    required String studentId,
-    required Map<String, dynamic> data,
-  }) async {
-    try {
-      await _dio.put(
-        '${ApiEndpoints.base}/students/$studentId/profile',
-        data: data,
-      );
     } on DioException catch (e) {
       throw _handleError(e);
     }
