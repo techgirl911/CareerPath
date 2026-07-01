@@ -1,8 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../app_colors.dart';
+import '../services/parent_service.dart';
+import '../models/career_model.dart';
 
 class ParentDashboard extends StatefulWidget {
-  const ParentDashboard({Key? key}) : super(key: key);
+  final String? parentId;
+  final String? parentName;
+
+  const ParentDashboard({
+    this.parentId,
+    this.parentName,
+    Key? key,
+  }) : super(key: key);
 
   @override
   State<ParentDashboard> createState() => _ParentDashboardState();
@@ -10,6 +20,48 @@ class ParentDashboard extends StatefulWidget {
 
 class _ParentDashboardState extends State<ParentDashboard> {
   int _selectedIndex = 0;
+  late ParentService _parentService;
+
+  List<CareerRecommendation> _childRecommendations = [];
+  Map<String, dynamic> _dashboardData = {};
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _parentService = ParentService();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      setState(() => _isLoading = true);
+
+      if (widget.parentId != null) {
+        final dashboard =
+            await _parentService.getParentDashboard(widget.parentId!);
+        final recommendations =
+            await _parentService.getChildRecommendations(widget.parentId!);
+
+        setState(() {
+          _dashboardData = dashboard;
+          _childRecommendations = recommendations;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+          _error = 'Parent ID not found';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,122 +70,153 @@ class _ParentDashboardState extends State<ParentDashboard> {
         title: const Text('Parent Portal'),
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Child Profile Section
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundColor: AppColors.primary.withOpacity(0.2),
-                      child: const Icon(Icons.person, size: 30),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Amara Osei',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(fontWeight: FontWeight.bold),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('Error: $_error'),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadData,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Child Profile Section
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 30,
+                                backgroundColor:
+                                    AppColors.primary.withOpacity(0.2),
+                                child: const Icon(Icons.person, size: 30),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Monitoring Child',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Career progress & achievements',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: Colors.grey[600],
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Grade 10 • Akuapem Senior High',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(color: Colors.grey[600]),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Performance Overview
+                      Text(
+                        'Performance Overview',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _MetricCard(
+                              label: 'Top Career Match',
+                              value: _childRecommendations.isNotEmpty
+                                  ? _childRecommendations.first.career.title
+                                  : 'Pending',
+                              color: AppColors.studentColor,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _MetricCard(
+                              label: 'Total Recommendations',
+                              value: _childRecommendations.length.toString(),
+                              color: AppColors.success,
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-            // Performance Overview
-            Text(
-              'Performance Overview',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _MetricCard(
-                    label: 'Top Career Match',
-                    value: 'Data Science',
-                    color: AppColors.studentColor,
+                      // Recommended Careers
+                      Text(
+                        'Recommended Careers',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 12),
+                      if (_childRecommendations.isEmpty)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Text(
+                              'No recommendations yet.',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                        )
+                      else
+                        ..._childRecommendations.map((rec) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _CareerRecommendationCard(
+                                title: rec.career.title,
+                                matchScore: rec.matchScore.toInt(),
+                                icon: Icons.trending_up,
+                              ),
+                            )),
+                      const SizedBox(height: 24),
+
+                      // Recent Activities
+                      Text(
+                        'Child\'s Activities',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 12),
+                      _ActivityItem(
+                        icon: Icons.quiz,
+                        title: 'Completed Career Assessment',
+                        timestamp: '2 days ago',
+                      ),
+                      _ActivityItem(
+                        icon: Icons.upload_file,
+                        title: 'Uploaded Academic Results',
+                        timestamp: '1 week ago',
+                      ),
+                      _ActivityItem(
+                        icon: Icons.assignment,
+                        title: 'Updated Career Profile',
+                        timestamp: '2 weeks ago',
+                      ),
+                      const SizedBox(height: 24),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _MetricCard(
-                    label: 'Current GPA',
-                    value: '3.8/4.0',
-                    color: AppColors.success,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Recommended Careers
-            Text(
-              'Recommended Careers',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
-            _CareerRecommendationCard(
-              title: 'Data Science',
-              matchScore: 94,
-              icon: Icons.trending_up,
-            ),
-            const SizedBox(height: 12),
-            _CareerRecommendationCard(
-              title: 'Software Engineering',
-              matchScore: 88,
-              icon: Icons.code,
-            ),
-            const SizedBox(height: 24),
-
-            // Recent Activities
-            Text(
-              'Recent Activities',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
-            _ActivityItem(
-              icon: Icons.quiz,
-              title: 'Completed Career Assessment',
-              timestamp: '2 days ago',
-            ),
-            _ActivityItem(
-              icon: Icons.upload_file,
-              title: 'Uploaded Report Card',
-              timestamp: '1 week ago',
-            ),
-            _ActivityItem(
-              icon: Icons.assignment,
-              title: 'Updated Academic Profile',
-              timestamp: '2 weeks ago',
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
@@ -143,7 +226,6 @@ class _ParentDashboardState extends State<ParentDashboard> {
         currentIndex: _selectedIndex,
         onTap: (index) {
           setState(() => _selectedIndex = index);
-          // TODO: Navigate to different tabs
         },
       ),
     );
