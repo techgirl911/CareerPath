@@ -31,6 +31,12 @@ app.use('/api/careers', careerRoutes);
 const quizRoutes = require('./routes/quiz');
 app.use('/api/quizzes', quizRoutes);
 
+const parentRoutes = require('./routes/parent');
+app.use('/api/parents', parentRoutes);
+
+const adminRoutes = require('./routes/admin');
+app.use('/api/admin', adminRoutes);
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);

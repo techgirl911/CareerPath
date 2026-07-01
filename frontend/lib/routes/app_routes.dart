@@ -43,7 +43,10 @@ class AppRoutes {
       ),
       GoRoute(
         path: studentDashboard,
-        builder: (context, state) => const StudentDashboard(),
+        builder: (context, state) {
+          final userName = state.extra as String? ?? 'Student';
+          return StudentDashboard(userName: userName);
+        },
       ),
       GoRoute(
         path: parentDashboard,

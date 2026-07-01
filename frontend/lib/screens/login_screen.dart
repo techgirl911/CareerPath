@@ -53,7 +53,18 @@ class _LoginScreenState extends State<LoginScreen> {
         SnackBar(content: Text('Welcome ${user.fullName}!')),
       );
 
-      // TODO: Navigate based on role
+      // Navigate based on role
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          if (user.role == 'student') {
+            context.go('/student-dashboard', extra: user.fullName);
+          } else if (user.role == 'parent') {
+            context.go('/parent-dashboard');
+          } else if (user.role == 'admin') {
+            context.go('/admin-dashboard');
+          }
+        }
+      });
     } catch (e) {
       setState(() {
         _errorMessage = e.toString();

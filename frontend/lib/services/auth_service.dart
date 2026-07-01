@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../app_constants.dart';
 import '../models/user_model.dart';
 
@@ -25,6 +26,10 @@ class AuthService {
           }
           return handler.next(options);
         },
+        onError: (error, handler) {
+          print('API Error: ${error.message}');
+          return handler.next(error);
+        },
       ),
     );
   }
@@ -50,8 +55,12 @@ class AuthService {
       if (response.statusCode == 201 || response.statusCode == 200) {
         _token = response.data['token'];
 
+        // Save token to local storage
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(AppConstants.tokenKey, _token!);
+
         final userData = response.data['user'] as Map<String, dynamic>;
-        userData['id'] = response.data['userId'];
+        final role = userData['role'] as String;
 
         switch (role) {
           case 'student':
@@ -87,8 +96,11 @@ class AuthService {
       if (response.statusCode == 200) {
         _token = response.data['token'];
 
+        // Save token to local storage
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(AppConstants.tokenKey, _token!);
+
         final userData = response.data['user'] as Map<String, dynamic>;
-        userData['id'] = response.data['userId'];
         final role = userData['role'] as String;
 
         switch (role) {
@@ -113,6 +125,10 @@ class AuthService {
     try {
       await _dio.post(ApiEndpoints.logout);
       _token = null;
+
+      // Clear token from storage
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(AppConstants.tokenKey);
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -139,6 +155,12 @@ class AuthService {
     } on DioException catch (e) {
       throw _handleError(e);
     }
+  }
+
+  // Load token from storage
+  Future<void> loadToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    _token = prefs.getString(AppConstants.tokenKey);
   }
 
   // Getters

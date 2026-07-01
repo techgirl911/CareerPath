@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import '../app_colors.dart';
-import '../models/career_model.dart';
 
 class StudentDashboard extends StatefulWidget {
-  const StudentDashboard({Key? key}) : super(key: key);
+  final String? userName;
+  final String? userEmail;
+
+  const StudentDashboard({
+    this.userName,
+    this.userEmail,
+    Key? key,
+  }) : super(key: key);
 
   @override
   State<StudentDashboard> createState() => _StudentDashboardState();
@@ -32,7 +38,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Welcome, Amara!',
+                      'Welcome, ${widget.userName ?? "Student"}!',
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                     const SizedBox(height: 8),
