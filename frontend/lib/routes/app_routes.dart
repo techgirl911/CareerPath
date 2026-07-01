@@ -54,11 +54,25 @@ class AppRoutes {
       ),
       GoRoute(
         path: parentDashboard,
-        builder: (context, state) => const ParentDashboard(),
+        builder: (context, state) {
+          final userName = state.extra as String? ?? 'Parent';
+          final parentId = state.uri.queryParameters['parentId'];
+          return ParentDashboard(
+            parentName: userName,
+            parentId: parentId,
+          );
+        },
       ),
       GoRoute(
         path: adminDashboard,
-        builder: (context, state) => const AdminDashboard(),
+        builder: (context, state) {
+          final userName = state.extra as String? ?? 'Admin';
+          final adminId = state.uri.queryParameters['adminId'];
+          return AdminDashboard(
+            adminName: userName,
+            adminId: adminId,
+          );
+        },
       ),
       GoRoute(
         path: '\$quiz/:quizId',

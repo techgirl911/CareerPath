@@ -124,13 +124,13 @@ class AuthService {
   Future<void> logout() async {
     try {
       await _dio.post(ApiEndpoints.logout);
+    } catch (e) {
+      print('Backend logout failed: $e');
+    } finally {
       _token = null;
-
       // Clear token from storage
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(AppConstants.tokenKey);
-    } on DioException catch (e) {
-      throw _handleError(e);
     }
   }
 

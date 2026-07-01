@@ -1,15 +1,103 @@
+import 'package:careerpath/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../app_colors.dart';
+import '../services/admin_service.dart';
 
 class AdminDashboard extends StatefulWidget {
-  const AdminDashboard({Key? key}) : super(key: key);
+  final String? adminId;
+  final String? adminName;
+
+  const AdminDashboard({
+    this.adminId,
+    this.adminName,
+    Key? key,
+  }) : super(key: key);
 
   @override
   State<AdminDashboard> createState() => _AdminDashboardState();
 }
 
-class _AdminDashboardState extends State<AdminDashboard> {
-  int _selectedTabIndex = 0;
+class _AdminDashboardState extends State<AdminDashboard>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  late AdminService _adminService;
+
+  Map<String, dynamic> _dashboardStats = {};
+  List<Map<String, dynamic>> _users = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 4, vsync: this);
+    _adminService = AdminService();
+    _loadData();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      setState(() => _isLoading = true);
+
+      final stats = await _adminService.getAdminDashboard();
+      final users = await _adminService.getAllUsers();
+
+      setState(() {
+        _dashboardStats = stats['statistics'] ?? {};
+        _users = users;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _handleLogout() async {
+    showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+              title: const Text('Logout'),
+              content: const Text('Are you sure you want to logout?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    try {
+                      final authService = AuthService();
+                      await authService.logout();
+                      if (mounted) {
+                        context.go('/');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Logged out successfully')),
+                        );
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error: $e')),
+                      );
+                    }
+                  },
+                  child:
+                      const Text('Logout', style: TextStyle(color: Colors.red)),
+                ),
+              ],
+            ));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,104 +105,62 @@ class _AdminDashboardState extends State<AdminDashboard> {
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
         elevation: 0,
-      ),
-      body: Column(
-        children: [
-          // Tab Navigation
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                _TabButton(
-                  label: 'Overview',
-                  isActive: _selectedTabIndex == 0,
-                  onTap: () => setState(() => _selectedTabIndex = 0),
-                ),
-                const SizedBox(width: 12),
-                _TabButton(
-                  label: 'Students',
-                  isActive: _selectedTabIndex == 1,
-                  onTap: () => setState(() => _selectedTabIndex = 1),
-                ),
-                const SizedBox(width: 12),
-                _TabButton(
-                  label: 'Careers',
-                  isActive: _selectedTabIndex == 2,
-                  onTap: () => setState(() => _selectedTabIndex = 2),
-                ),
-                const SizedBox(width: 12),
-                _TabButton(
-                  label: 'Quizzes',
-                  isActive: _selectedTabIndex == 3,
-                  onTap: () => setState(() => _selectedTabIndex = 3),
-                ),
-              ],
-            ),
-          ),
-          // Tab Content
-          Expanded(
-            child: IndexedStack(
-              index: _selectedTabIndex,
-              children: [
-                _OverviewTab(),
-                _StudentsTab(),
-                _CareersTab(),
-                _QuizzesTab(),
-              ],
-            ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _handleLogout,
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _TabButton extends StatelessWidget {
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _TabButton({
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            color: isActive ? AppColors.primary : Colors.transparent,
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isActive ? Colors.white : Colors.grey[600],
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-            ),
-          ),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: 'Overview'),
+            Tab(text: 'Users'),
+            Tab(text: 'Careers'),
+            Tab(text: 'Quizzes'),
+          ],
         ),
       ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('Error: $_error'),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadData,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                )
+              : TabBarView(
+                  controller: _tabController,
+                  children: [
+                    // Overview Tab
+                    _buildOverviewTab(),
+                    // Users Tab
+                    _buildUsersTab(),
+                    // Careers Tab
+                    _buildCareersTab(),
+                    // Quizzes Tab
+                    _buildQuizzesTab(),
+                  ],
+                ),
     );
   }
-}
 
-class _OverviewTab extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildOverviewTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Platform Statistics',
+            'System Statistics',
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 16),
@@ -123,8 +169,14 @@ class _OverviewTab extends StatelessWidget {
               Expanded(
                 child: _StatCard(
                   label: 'Total Students',
-                  value: '1,245',
-                  icon: Icons.people,
+                  value: (_dashboardStats['usersByRole'] as List?)
+                          ?.firstWhere(
+                            (item) => item['role'] == 'student',
+                            orElse: () => {'count': 0},
+                          )['count']
+                          .toString() ??
+                      '0',
+                  icon: Icons.person,
                   color: AppColors.studentColor,
                 ),
               ),
@@ -132,7 +184,13 @@ class _OverviewTab extends StatelessWidget {
               Expanded(
                 child: _StatCard(
                   label: 'Total Parents',
-                  value: '892',
+                  value: (_dashboardStats['usersByRole'] as List?)
+                          ?.firstWhere(
+                            (item) => item['role'] == 'parent',
+                            orElse: () => {'count': 0},
+                          )['count']
+                          .toString() ??
+                      '0',
                   icon: Icons.family_restroom,
                   color: AppColors.parentColor,
                 ),
@@ -144,8 +202,8 @@ class _OverviewTab extends StatelessWidget {
             children: [
               Expanded(
                 child: _StatCard(
-                  label: 'Active Careers',
-                  value: '156',
+                  label: 'Total Careers',
+                  value: _dashboardStats['totalCareers']?.toString() ?? '0',
                   icon: Icons.work,
                   color: AppColors.primary,
                 ),
@@ -153,23 +211,91 @@ class _OverviewTab extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: _StatCard(
-                  label: 'Quizzes',
-                  value: '24',
+                  label: 'Total Quizzes',
+                  value: _dashboardStats['totalQuizzes']?.toString() ?? '0',
                   icon: Icons.quiz,
-                  color: AppColors.info,
+                  color: AppColors.success,
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 24),
+          Text(
+            'Quick Actions',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 16),
+          _QuickActionButton(
+            icon: Icons.add_box,
+            label: 'Add New Career',
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Coming soon!')),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          _QuickActionButton(
+            icon: Icons.add_circle,
+            label: 'Create New Quiz',
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Coming soon!')),
+              );
+            },
+          ),
         ],
       ),
     );
   }
-}
 
-class _StudentsTab extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildUsersTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Manage Users (${_users.length})',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 16),
+          if (_users.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  'No users found',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+            )
+          else
+            ..._users.map((user) => _UserListItem(
+                  name: user['fullName'] ?? 'Unknown',
+                  email: user['email'] ?? 'N/A',
+                  role: user['role'] ?? 'Unknown',
+                  isActive: user['isActive'] ?? false,
+                  onDeactivate: () async {
+                    try {
+                      await _adminService.deactivateUser(user['id']);
+                      _loadData();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('User deactivated')),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error: $e')),
+                      );
+                    }
+                  },
+                )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCareersTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -179,43 +305,46 @@ class _StudentsTab extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Students',
+                'Manage Careers',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               ElevatedButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Coming soon!')),
+                  );
+                },
                 icon: const Icon(Icons.add),
                 label: const Text('Add'),
-                onPressed: () {
-                  // TODO: Add student
-                },
               ),
             ],
           ),
           const SizedBox(height: 16),
-          _StudentListItem(
-            name: 'Amara Osei',
-            email: 'amara.osei@school.com',
-            gpa: '3.8',
-          ),
-          _StudentListItem(
-            name: 'Kwame Boateng',
-            email: 'kwame.boateng@school.com',
-            gpa: '3.5',
-          ),
-          _StudentListItem(
-            name: 'Ama Mensah',
-            email: 'ama.mensah@school.com',
-            gpa: '3.9',
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.work,
+                    size: 50,
+                    color: AppColors.primary.withOpacity(0.5),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Career management features coming soon',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
     );
   }
-}
 
-class _CareersTab extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildQuizzesTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -225,79 +354,39 @@ class _CareersTab extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Careers',
+                'Manage Quizzes',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               ElevatedButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Coming soon!')),
+                  );
+                },
                 icon: const Icon(Icons.add),
                 label: const Text('Add'),
-                onPressed: () {
-                  // TODO: Add career
-                },
               ),
             ],
           ),
           const SizedBox(height: 16),
-          _CareerListItem(
-            title: 'Data Science',
-            demand: 'Very High',
-            count: 45,
-          ),
-          _CareerListItem(
-            title: 'Software Engineering',
-            demand: 'High',
-            count: 38,
-          ),
-          _CareerListItem(
-            title: 'Biomedical Research',
-            demand: 'Medium',
-            count: 22,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _QuizzesTab extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Quizzes',
-                style: Theme.of(context).textTheme.titleLarge,
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.quiz,
+                    size: 50,
+                    color: AppColors.success.withOpacity(0.5),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Quiz management features coming soon',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
               ),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.add),
-                label: const Text('Add'),
-                onPressed: () {
-                  // TODO: Add quiz
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _QuizListItem(
-            title: '2024 Career Assessment',
-            questions: 20,
-            responses: 145,
-          ),
-          _QuizListItem(
-            title: '2023 Aptitude Test',
-            questions: 25,
-            responses: 892,
-          ),
-          _QuizListItem(
-            title: 'Interest Inventory',
-            questions: 30,
-            responses: 756,
+            ),
           ),
         ],
       ),
@@ -326,20 +415,28 @@ class _StatCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: color, size: 32),
-            const SizedBox(height: 12),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: color, size: 24),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 12),
             Text(
               value,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: color,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.grey[600],
                   ),
             ),
           ],
@@ -349,75 +446,148 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _StudentListItem extends StatelessWidget {
+class _QuickActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _QuickActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: AppColors.primary),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios, size: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UserListItem extends StatelessWidget {
   final String name;
   final String email;
-  final String gpa;
+  final String role;
+  final bool isActive;
+  final VoidCallback onDeactivate;
 
-  const _StudentListItem({
+  const _UserListItem({
     required this.name,
     required this.email,
-    required this.gpa,
+    required this.role,
+    required this.isActive,
+    required this.onDeactivate,
   });
+
+  Color _getRoleColor() {
+    switch (role) {
+      case 'student':
+        return AppColors.studentColor;
+      case 'parent':
+        return AppColors.parentColor;
+      case 'admin':
+        return AppColors.adminColor;
+      default:
+        return AppColors.primary;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          child: Text(name[0]),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: _getRoleColor().withOpacity(0.2),
+              child: Icon(Icons.person, color: _getRoleColor()),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Text(
+                        email,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.grey[600],
+                            ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getRoleColor().withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          role,
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: _getRoleColor(),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            PopupMenuButton(
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  child: Text(isActive ? 'Deactivate' : 'Activate'),
+                  onTap: onDeactivate,
+                ),
+              ],
+            ),
+          ],
         ),
-        title: Text(name),
-        subtitle: Text(email),
-        trailing: Text('GPA: $gpa'),
-      ),
-    );
-  }
-}
-
-class _CareerListItem extends StatelessWidget {
-  final String title;
-  final String demand;
-  final int count;
-
-  const _CareerListItem({
-    required this.title,
-    required this.demand,
-    required this.count,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: const Icon(Icons.work),
-        title: Text(title),
-        subtitle: Text('Demand: $demand'),
-        trailing: Text('$count matches'),
-      ),
-    );
-  }
-}
-
-class _QuizListItem extends StatelessWidget {
-  final String title;
-  final int questions;
-  final int responses;
-
-  const _QuizListItem({
-    required this.title,
-    required this.questions,
-    required this.responses,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: const Icon(Icons.quiz),
-        title: Text(title),
-        subtitle: Text('$questions questions'),
-        trailing: Text('$responses responses'),
       ),
     );
   }
