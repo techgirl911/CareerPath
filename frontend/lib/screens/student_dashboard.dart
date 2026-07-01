@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../app_colors.dart';
+import '../widgets/career_demand_chart.dart';
 
 class StudentDashboard extends StatefulWidget {
   final String? userName;
@@ -111,6 +113,16 @@ class _StudentDashboardState extends State<StudentDashboard> {
             ),
             const SizedBox(height: 24),
 
+            // Demand Chart
+            CareerDemandChart(
+              careerData: [
+                CareerDemandData(careerName: 'Data Science', demandLevel: 94),
+                CareerDemandData(careerName: 'Software Eng', demandLevel: 88),
+                CareerDemandData(careerName: 'Biomedical', demandLevel: 76),
+              ],
+            ),
+            const SizedBox(height: 24),
+
             // Quick Actions
             Text(
               'Quick Actions',
@@ -124,7 +136,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                     icon: Icons.quiz,
                     label: 'Take Quiz',
                     onTap: () {
-                      // TODO: Navigate to quiz
+                      context.push('/quiz/1');
                     },
                   ),
                 ),
@@ -134,7 +146,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                     icon: Icons.upload_file,
                     label: 'Upload Results',
                     onTap: () {
-                      // TODO: Navigate to upload
+                      context.push('/upload-results');
                     },
                   ),
                 ),
