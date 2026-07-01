@@ -62,9 +62,9 @@ class _LoginScreenState extends State<LoginScreen> {
               extra: user.fullName,
             );
           } else if (user.role == 'parent') {
-            context.go(AppRoutes.parentDashboard);
+            context.go('/parent-dashboard');
           } else if (user.role == 'admin') {
-            context.go(AppRoutes.adminDashboard);
+            context.go('/admin-dashboard');
           }
         }
       });
