@@ -27,10 +27,13 @@ class AppRoutes {
   static final GoRouter router = GoRouter(
     initialLocation: roleSelection,
     routes: [
+      // Role Selection
       GoRoute(
         path: roleSelection,
         builder: (context, state) => const RoleSelectionScreen(),
       ),
+
+      // Login
       GoRoute(
         path: login,
         builder: (context, state) {
@@ -38,6 +41,8 @@ class AppRoutes {
           return LoginScreen(userRole: role);
         },
       ),
+
+      // Signup
       GoRoute(
         path: signup,
         builder: (context, state) {
@@ -45,6 +50,8 @@ class AppRoutes {
           return SignupScreen(userRole: role);
         },
       ),
+
+      // Student Dashboard
       GoRoute(
         path: studentDashboard,
         builder: (context, state) {
@@ -56,6 +63,8 @@ class AppRoutes {
           );
         },
       ),
+
+      // Parent Dashboard
       GoRoute(
         path: parentDashboard,
         builder: (context, state) {
@@ -67,6 +76,8 @@ class AppRoutes {
           );
         },
       ),
+
+      // Admin Dashboard
       GoRoute(
         path: adminDashboard,
         builder: (context, state) {
@@ -78,8 +89,10 @@ class AppRoutes {
           );
         },
       ),
+
+      // Quiz
       GoRoute(
-        path: '\$quiz/:quizId',
+        path: '$quiz/:quizId',
         builder: (context, state) {
           final dummyQuiz = Quiz(
             id: '1',
@@ -123,10 +136,14 @@ class AppRoutes {
           return QuizScreen(quiz: dummyQuiz);
         },
       ),
+
+      // Upload Results
       GoRoute(
         path: uploadResults,
         builder: (context, state) => const UploadResultsScreen(),
       ),
+
+      // Profile Screen
       GoRoute(
         path: profile,
         builder: (context, state) {
@@ -138,10 +155,13 @@ class AppRoutes {
           );
         },
       ),
+
+      // Academic Screen
       GoRoute(
         path: academic,
         builder: (context, state) {
           final studentId = state.extra as String?;
+          print('Routing to academic with studentId: $studentId');
           return AcademicScreen(studentId: studentId);
         },
       ),
@@ -151,7 +171,12 @@ class AppRoutes {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            const Icon(Icons.error_outline, size: 60),
+            const SizedBox(height: 16),
             const Text('Page not found'),
+            const SizedBox(height: 8),
+            Text('Route: ${state.uri}'),
+            const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => context.go(roleSelection),
               child: const Text('Go to Home'),
