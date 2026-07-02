@@ -42,10 +42,14 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
+      print('Starting login process...');
+
       final user = await _authService.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+
+      print('Login successful, user: ${user.fullName}');
 
       if (!mounted) return;
 
@@ -53,23 +57,31 @@ class _LoginScreenState extends State<LoginScreen> {
         SnackBar(content: Text('Welcome ${user.fullName}!')),
       );
 
-      // Navigate based on role
-      Future.delayed(const Duration(milliseconds: 500), () {
+      // Navigate based on role after delay
+      Future.delayed(const Duration(milliseconds: 1500), () {
         if (mounted) {
+          print('Navigating to ${user.role} dashboard...');
+
           if (user.role == 'student') {
             context.go(
               '${AppRoutes.studentDashboard}?studentId=${user.id}',
               extra: user.fullName,
             );
           } else if (user.role == 'parent') {
-            context.go('${AppRoutes.parentDashboard}?parentId=${user.id}',
-                extra: user.fullName);
+            context.go(
+              '${AppRoutes.parentDashboard}?parentId=${user.id}',
+              extra: user.fullName,
+            );
           } else if (user.role == 'admin') {
-            context.go('${AppRoutes.adminDashboard}', extra: user.fullName);
+            context.go(
+              '${AppRoutes.adminDashboard}?adminId=${user.id}',
+              extra: user.fullName,
+            );
           }
         }
       });
     } catch (e) {
+      print('Login error: $e');
       setState(() {
         _errorMessage = e.toString();
       });

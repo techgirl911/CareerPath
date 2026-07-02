@@ -23,6 +23,7 @@ class AuthService {
         onRequest: (options, handler) {
           if (_token != null) {
             options.headers['Authorization'] = 'Bearer $_token';
+            print('Request with token: Bearer $_token');
           }
           return handler.next(options);
         },
@@ -34,10 +35,11 @@ class AuthService {
     );
   }
 
+  // Load token from storage on app start
   Future<void> initializeToken() async {
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString(AppConstants.tokenKey);
-    print('Token loaded: $_token');
+    print('Token initialized: $_token');
   }
 
   // Signup
@@ -48,6 +50,8 @@ class AuthService {
     required String role,
   }) async {
     try {
+      print('Signing up with email: $email, role: $role');
+
       final response = await _dio.post(
         ApiEndpoints.signup,
         data: {
@@ -58,17 +62,21 @@ class AuthService {
         },
       );
 
+      print('Signup response: ${response.data}');
+
       if (response.statusCode == 201 || response.statusCode == 200) {
         _token = response.data['token'];
+        print('Token received from signup: $_token');
 
         // Save token to local storage
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(AppConstants.tokenKey, _token!);
+        print('Token saved to SharedPreferences');
 
         final userData = response.data['user'] as Map<String, dynamic>;
-        final role = userData['role'] as String;
+        final userRole = userData['role'] as String;
 
-        switch (role) {
+        switch (userRole) {
           case 'student':
             return Student.fromJson(userData);
           case 'parent':
@@ -81,6 +89,7 @@ class AuthService {
       }
       throw Exception('Signup failed');
     } on DioException catch (e) {
+      print('Signup error: ${e.response?.data}');
       throw _handleError(e);
     }
   }
@@ -91,6 +100,8 @@ class AuthService {
     required String password,
   }) async {
     try {
+      print('Logging in with email: $email');
+
       final response = await _dio.post(
         ApiEndpoints.login,
         data: {
@@ -99,17 +110,28 @@ class AuthService {
         },
       );
 
+      print('Login response status: ${response.statusCode}');
+      print('Login response data: ${response.data}');
+
       if (response.statusCode == 200) {
         _token = response.data['token'];
+        print('Token received: $_token');
 
         // Save token to local storage
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(AppConstants.tokenKey, _token!);
+        print('Token saved to SharedPreferences');
+
+        // Verify token was saved
+        final savedToken = prefs.getString(AppConstants.tokenKey);
+        print('Token verified in SharedPreferences: $savedToken');
 
         final userData = response.data['user'] as Map<String, dynamic>;
-        final role = userData['role'] as String;
+        final userRole = userData['role'] as String;
 
-        switch (role) {
+        print('User role: $userRole');
+
+        switch (userRole) {
           case 'student':
             return Student.fromJson(userData);
           case 'parent':
@@ -122,6 +144,9 @@ class AuthService {
       }
       throw Exception('Login failed');
     } on DioException catch (e) {
+      print('Login error status: ${e.response?.statusCode}');
+      print('Login error data: ${e.response?.data}');
+      print('Login error message: ${e.message}');
       throw _handleError(e);
     }
   }
@@ -129,26 +154,31 @@ class AuthService {
   // Logout
   Future<void> logout() async {
     try {
+      print('Logging out...');
+      // Call backend logout endpoint
       await _dio.post(ApiEndpoints.logout);
     } catch (e) {
+      // Continue even if backend fails
       print('Backend logout failed: $e');
     } finally {
+      // Always clear local data
       _token = null;
-      // Clear token from storage
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(AppConstants.tokenKey);
+      print('Token cleared from memory and SharedPreferences');
     }
   }
 
   // Get current user
   Future<User> getCurrentUser() async {
     try {
+      print('Getting current user...');
       final response = await _dio.get(ApiEndpoints.getCurrentUser);
 
       final userData = response.data['user'] as Map<String, dynamic>;
-      final role = userData['role'] as String;
+      final userRole = userData['role'] as String;
 
-      switch (role) {
+      switch (userRole) {
         case 'student':
           return Student.fromJson(userData);
         case 'parent':
@@ -167,6 +197,7 @@ class AuthService {
   Future<void> loadToken() async {
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString(AppConstants.tokenKey);
+    print('Token loaded from storage: $_token');
   }
 
   // Getters
