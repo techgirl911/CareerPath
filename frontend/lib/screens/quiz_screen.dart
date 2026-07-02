@@ -84,7 +84,8 @@ class _QuizScreenState extends State<QuizScreen> {
   Widget build(BuildContext context) {
     final currentQuestion = widget.quiz.questions[_currentQuestionIndex];
     final isAnswered = _answers.containsKey(currentQuestion.id);
-    final isLastQuestion = _currentQuestionIndex == widget.quiz.questions.length - 1;
+    final isLastQuestion =
+        _currentQuestionIndex == widget.quiz.questions.length - 1;
     final progress = (_currentQuestionIndex + 1) / widget.quiz.questions.length;
 
     return Scaffold(
@@ -114,7 +115,8 @@ class _QuizScreenState extends State<QuizScreen> {
                       ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: isAnswered
                         ? AppColors.success.withOpacity(0.2)
@@ -216,6 +218,7 @@ class _QuestionOptions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: options.asMap().entries.map((entry) {
+        // ignore: unused_local_variable
         final index = entry.key;
         final option = entry.value;
         final isSelected = selectedAnswer == option;
@@ -230,9 +233,7 @@ class _QuestionOptions extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: isSelected
-                        ? AppColors.primary
-                        : Colors.grey[300]!,
+                    color: isSelected ? AppColors.primary : Colors.grey[300]!,
                     width: isSelected ? 2 : 1,
                   ),
                   borderRadius: BorderRadius.circular(12),
@@ -271,15 +272,14 @@ class _QuestionOptions extends StatelessWidget {
                     Expanded(
                       child: Text(
                         option,
-                        style:
-                            Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: isSelected
-                                      ? AppColors.primary
-                                      : Colors.black87,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w600
-                                      : FontWeight.w400,
-                                ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : Colors.black87,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                            ),
                       ),
                     ),
                   ],

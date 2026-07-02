@@ -24,6 +24,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
   late ParentService _parentService;
 
   List<CareerRecommendation> _childRecommendations = [];
+  // ignore: unused_field
   Map<String, dynamic> _dashboardData = {};
   bool _isLoading = true;
   String? _error;

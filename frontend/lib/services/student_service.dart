@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../app_constants.dart';
+// ignore: unused_import
 import '../models/user_model.dart';
 import '../models/career_model.dart';
 import '../models/academic_model.dart';

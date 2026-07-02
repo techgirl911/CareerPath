@@ -26,6 +26,7 @@ class StudentDashboard extends StatefulWidget {
 class _StudentDashboardState extends State<StudentDashboard> {
   int _selectedIndex = 0;
   late StudentService _studentService;
+  // ignore: unused_field
   late CareerService _careerService;
 
   List<CareerRecommendation> _recommendations = [];
