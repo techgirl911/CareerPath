@@ -8,6 +8,8 @@ import '../screens/parent_dashboard.dart';
 import '../screens/admin_dashboard.dart';
 import '../screens/quiz_screen.dart';
 import '../screens/upload_results_screen.dart';
+import '../screens/profile_screen.dart';
+import '../screens/academic_screen.dart';
 import '../models/quiz_model.dart';
 
 class AppRoutes {
@@ -19,6 +21,8 @@ class AppRoutes {
   static const String adminDashboard = '/admin-dashboard';
   static const String quiz = '/quiz';
   static const String uploadResults = '/upload-results';
+  static const String profile = '/profile';
+  static const String academic = '/academic';
 
   static final GoRouter router = GoRouter(
     initialLocation: roleSelection,
@@ -55,22 +59,22 @@ class AppRoutes {
       GoRoute(
         path: parentDashboard,
         builder: (context, state) {
-          final userName = state.extra as String? ?? 'Parent';
+          final parentName = state.extra as String? ?? 'Parent';
           final parentId = state.uri.queryParameters['parentId'];
           return ParentDashboard(
-            parentName: userName,
             parentId: parentId,
+            parentName: parentName,
           );
         },
       ),
       GoRoute(
         path: adminDashboard,
         builder: (context, state) {
-          final userName = state.extra as String? ?? 'Admin';
+          final adminName = state.extra as String? ?? 'Admin';
           final adminId = state.uri.queryParameters['adminId'];
           return AdminDashboard(
-            adminName: userName,
             adminId: adminId,
+            adminName: adminName,
           );
         },
       ),
@@ -122,6 +126,24 @@ class AppRoutes {
       GoRoute(
         path: uploadResults,
         builder: (context, state) => const UploadResultsScreen(),
+      ),
+      GoRoute(
+        path: profile,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return ProfileScreen(
+            userName: extra?['userName'],
+            userEmail: extra?['userEmail'],
+            userId: extra?['userId'],
+          );
+        },
+      ),
+      GoRoute(
+        path: academic,
+        builder: (context, state) {
+          final studentId = state.extra as String?;
+          return AcademicScreen(studentId: studentId);
+        },
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

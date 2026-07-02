@@ -281,6 +281,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
         currentIndex: _selectedIndex,
         onTap: (index) {
           setState(() => _selectedIndex = index);
+          if (index == 1) {
+            context.push('/academic-profile?studentId=${widget.studentId}');
+          } else if (index == 2) {
+            context.push('/profile', extra: {
+              'userName': widget.userName,
+              'userEmail': widget.userEmail,
+              'userId': widget.studentId,
+            });
+          }
         },
       ),
     );
