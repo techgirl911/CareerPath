@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../app_constants.dart';
-// ignore: unused_import
 import '../models/career_model.dart';
 
 class AdminService {
@@ -10,18 +10,37 @@ class AdminService {
     _setupInterceptors();
   }
 
-  void _setupInterceptors() {
+  Future<void> _setupInterceptors() async {
     _dio.options.baseUrl = AppConstants.baseUrl;
     _dio.options.connectTimeout =
         Duration(milliseconds: AppConstants.connectionTimeout);
     _dio.options.receiveTimeout =
         Duration(milliseconds: AppConstants.receiveTimeout);
+
+    // Get token from storage
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(AppConstants.tokenKey);
+
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          return handler.next(options);
+        },
+        onError: (error, handler) {
+          print('API Error: ${error.message}');
+          return handler.next(error);
+        },
+      ),
+    );
   }
 
   // Get admin dashboard
   Future<Map<String, dynamic>> getAdminDashboard() async {
     try {
-      final response = await _dio.get('${ApiEndpoints.base}/admin/dashboard');
+      final response = await _dio.get(ApiEndpoints.adminDashboard);
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       throw _handleError(e);

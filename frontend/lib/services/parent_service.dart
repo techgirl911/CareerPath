@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../app_constants.dart';
 import '../models/career_model.dart';
 import '../models/academic_model.dart';
@@ -10,19 +11,38 @@ class ParentService {
     _setupInterceptors();
   }
 
-  void _setupInterceptors() {
+  Future<void> _setupInterceptors() async {
     _dio.options.baseUrl = AppConstants.baseUrl;
     _dio.options.connectTimeout =
         Duration(milliseconds: AppConstants.connectionTimeout);
     _dio.options.receiveTimeout =
         Duration(milliseconds: AppConstants.receiveTimeout);
+
+    // Get token from storage
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(AppConstants.tokenKey);
+
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          return handler.next(options);
+        },
+        onError: (error, handler) {
+          print('API Error: ${error.message}');
+          return handler.next(error);
+        },
+      ),
+    );
   }
 
   // Get parent dashboard
   Future<Map<String, dynamic>> getParentDashboard(String parentId) async {
     try {
       final response =
-          await _dio.get('${ApiEndpoints.base}/parents/$parentId/dashboard');
+          await _dio.get(ApiEndpoints.getParentDashboard(parentId));
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       throw _handleError(e);
@@ -35,7 +55,7 @@ class ParentService {
   ) async {
     try {
       final response = await _dio.get(
-        '${ApiEndpoints.base}/parents/$parentId/child/recommendations',
+        ApiEndpoints.getChildRecommendations(parentId),
       );
       return (response.data['recommendations'] as List)
           .map((item) => CareerRecommendation.fromJson(item))
@@ -49,7 +69,7 @@ class ParentService {
   Future<List<AcademicResult>> getChildAcademic(String parentId) async {
     try {
       final response = await _dio.get(
-        '${ApiEndpoints.base}/parents/$parentId/child/academic',
+        ApiEndpoints.getChildAcademic(parentId),
       );
       return (response.data['academicResults'] as List)
           .map((item) => AcademicResult.fromJson(item))

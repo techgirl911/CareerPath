@@ -1,6 +1,8 @@
+// ignore_for_file: unused_import
+
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../app_constants.dart';
-// ignore: unused_import
 import '../models/user_model.dart';
 import '../models/career_model.dart';
 import '../models/academic_model.dart';
@@ -12,12 +14,31 @@ class StudentService {
     _setupInterceptors();
   }
 
-  void _setupInterceptors() {
+  Future<void> _setupInterceptors() async {
     _dio.options.baseUrl = AppConstants.baseUrl;
     _dio.options.connectTimeout =
         Duration(milliseconds: AppConstants.connectionTimeout);
     _dio.options.receiveTimeout =
         Duration(milliseconds: AppConstants.receiveTimeout);
+
+    // Get token from storage
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(AppConstants.tokenKey);
+
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          return handler.next(options);
+        },
+        onError: (error, handler) {
+          print('API Error: ${error.message}');
+          return handler.next(error);
+        },
+      ),
+    );
   }
 
   // Get student dashboard
@@ -35,7 +56,7 @@ class StudentService {
   Future<StudentAcademicProfile> getAcademicProfile(String studentId) async {
     try {
       final response = await _dio.get(
-        '${ApiEndpoints.base}/students/$studentId/academic-profile',
+        ApiEndpoints.getAcademicProfile(studentId),
       );
       return StudentAcademicProfile.fromJson(response.data);
     } on DioException catch (e) {
@@ -46,8 +67,8 @@ class StudentService {
   // Get academic results
   Future<List<AcademicResult>> getAcademicResults(String studentId) async {
     try {
-      final response = await _dio
-          .get('${ApiEndpoints.base}/students/$studentId/academic-results');
+      final response =
+          await _dio.get(ApiEndpoints.getAcademicResults(studentId));
       return (response.data as List)
           .map((item) => AcademicResult.fromJson(item))
           .toList();
