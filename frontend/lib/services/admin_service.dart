@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_constants.dart';
+// ignore: unused_import
 import '../models/career_model.dart';
 
 class AdminService {
