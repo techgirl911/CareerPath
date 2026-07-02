@@ -282,8 +282,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
         onTap: (index) {
           setState(() => _selectedIndex = index);
           if (index == 1) {
-            context.push('/academic-profile?studentId=${widget.studentId}');
+            print(
+                'Navigating to Academic Profile for studentId: ${widget.studentId}');
+            context.push('/academic', extra: widget.studentId);
           } else if (index == 2) {
+            print('Navigating to Profile for studentId: ${widget.studentId}');
             context.push('/profile', extra: {
               'userName': widget.userName,
               'userEmail': widget.userEmail,
