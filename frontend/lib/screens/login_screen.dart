@@ -42,14 +42,20 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      print('Starting login process...');
+      print('========== LOGIN START ==========');
+      print('Email: ${_emailController.text.trim()}');
+      print('Password length: ${_passwordController.text.length}');
 
       final user = await _authService.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
-      print('Login successful, user: ${user.fullName}');
+      print('========== LOGIN SUCCESS ==========');
+      print('User: ${user.fullName}');
+      print('Role: ${user.role}');
+      print('ID: ${user.id}');
+      print('========== LOGIN SUCCESS END ==========');
 
       if (!mounted) return;
 
@@ -57,22 +63,25 @@ class _LoginScreenState extends State<LoginScreen> {
         SnackBar(content: Text('Welcome ${user.fullName}!')),
       );
 
-      // Navigate based on role after delay
       Future.delayed(const Duration(milliseconds: 1500), () {
         if (mounted) {
-          print('Navigating to ${user.role} dashboard...');
+          print('========== NAVIGATING ==========');
+          print('Role: ${user.role}');
 
           if (user.role == 'student') {
+            print('Going to student dashboard');
             context.go(
               '${AppRoutes.studentDashboard}?studentId=${user.id}',
               extra: user.fullName,
             );
           } else if (user.role == 'parent') {
+            print('Going to parent dashboard');
             context.go(
               '${AppRoutes.parentDashboard}?parentId=${user.id}',
               extra: user.fullName,
             );
           } else if (user.role == 'admin') {
+            print('Going to admin dashboard');
             context.go(
               '${AppRoutes.adminDashboard}?adminId=${user.id}',
               extra: user.fullName,
@@ -81,7 +90,10 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       });
     } catch (e) {
-      print('Login error: $e');
+      print('========== LOGIN ERROR ==========');
+      print('Error type: ${e.runtimeType}');
+      print('Error: $e');
+      print('========== LOGIN ERROR END ==========');
       setState(() {
         _errorMessage = e.toString();
       });
