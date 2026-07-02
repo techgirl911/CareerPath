@@ -14,22 +14,25 @@ class StudentService {
     _setupInterceptors();
   }
 
-  Future<void> _setupInterceptors() async {
+  void _setupInterceptors() {
     _dio.options.baseUrl = AppConstants.baseUrl;
     _dio.options.connectTimeout =
         Duration(milliseconds: AppConstants.connectionTimeout);
     _dio.options.receiveTimeout =
         Duration(milliseconds: AppConstants.receiveTimeout);
 
-    // Get token from storage
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString(AppConstants.tokenKey);
-
     _dio.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (options, handler) {
+        onRequest: (options, handler) async {
+          // Load token fresh from storage on each request
+          final prefs = await SharedPreferences.getInstance();
+          final token = prefs.getString(AppConstants.tokenKey);
+
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
+            print('StudentService - Token added: Bearer $token');
+          } else {
+            print('StudentService - No token found!');
           }
           return handler.next(options);
         },
@@ -44,10 +47,13 @@ class StudentService {
   // Get student dashboard
   Future<Map<String, dynamic>> getStudentDashboard(String studentId) async {
     try {
+      print('Fetching dashboard for student: $studentId');
       final response =
           await _dio.get(ApiEndpoints.getStudentDashboard(studentId));
+      print('Dashboard response received');
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
+      print('Dashboard error: ${e.response?.data}');
       throw _handleError(e);
     }
   }
@@ -82,12 +88,15 @@ class StudentService {
     String studentId,
   ) async {
     try {
+      print('Fetching recommendations for student: $studentId');
       final response =
           await _dio.get(ApiEndpoints.getRecommendations(studentId));
+      print('Recommendations received');
       return (response.data['recommendations'] as List)
           .map((item) => CareerRecommendation.fromJson(item))
           .toList();
     } on DioException catch (e) {
+      print('Recommendations error: ${e.response?.data}');
       throw _handleError(e);
     }
   }

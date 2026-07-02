@@ -10,20 +10,20 @@ class CareerService {
     _setupInterceptors();
   }
 
-  Future<void> _setupInterceptors() async {
+  void _setupInterceptors() {
     _dio.options.baseUrl = AppConstants.baseUrl;
     _dio.options.connectTimeout =
         Duration(milliseconds: AppConstants.connectionTimeout);
     _dio.options.receiveTimeout =
         Duration(milliseconds: AppConstants.receiveTimeout);
 
-    // Get token from storage
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString(AppConstants.tokenKey);
-
     _dio.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (options, handler) {
+        onRequest: (options, handler) async {
+          // Load token fresh from storage on each request
+          final prefs = await SharedPreferences.getInstance();
+          final token = prefs.getString(AppConstants.tokenKey);
+
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
