@@ -34,6 +34,12 @@ class AuthService {
     );
   }
 
+  Future<void> initializeToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    _token = prefs.getString(AppConstants.tokenKey);
+    print('Token loaded: $_token');
+  }
+
   // Signup
   Future<User> signup({
     required String email,

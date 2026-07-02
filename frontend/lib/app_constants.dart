@@ -39,41 +39,91 @@ class ApiEndpoints {
   static const String base =
       '${AppConstants.baseUrl}${AppConstants.apiVersion}';
 
-  // Auth
+  // ===== Auth Endpoints =====
   static const String signup = '$base/auth/signup';
   static const String login = '$base/auth/login';
   static const String logout = '$base/auth/logout';
   static const String getCurrentUser = '$base/auth/me';
 
-  // Students
+  // ===== Student Endpoints =====
   static String getStudentDashboard(String studentId) =>
       '$base/students/$studentId/dashboard';
 
   static String getRecommendations(String studentId) =>
       '$base/students/$studentId/recommendations';
 
+  static String getAcademicProfile(String studentId) =>
+      '$base/students/$studentId/academic-profile';
+
   static String getAcademicResults(String studentId) =>
       '$base/students/$studentId/academic-results';
 
-  // Careers
+  static String submitQuiz(String studentId) =>
+      '$base/students/$studentId/submit';
+
+  static String uploadDocument(String studentId) =>
+      '$base/students/$studentId/upload-document';
+
+  // ===== Career Endpoints =====
   static const String getAllCareers = '$base/careers';
 
   static String getCareerById(String careerId) => '$base/careers/$careerId';
 
+  static String getCareersBySubject(String subject) =>
+      '$base/careers/subject/$subject';
+
+  static String getMarketDemand(String careerId) =>
+      '$base/careers/$careerId/market-demand';
+
   static const String getTrendingCareers = '$base/careers/trending';
 
-  // Quizzes
+  static String searchCareers(String query) => '$base/careers/search?q=$query';
+
+  // ===== Quiz Endpoints =====
   static const String getAllQuizzes = '$base/quizzes';
 
   static String getQuizById(String quizId) => '$base/quizzes/$quizId';
 
-  static String submitQuiz(String studentId) =>
-      '$base/students/$studentId/submit-quiz';
+  static String getQuizQuestions(String quizId) =>
+      '$base/quizzes/$quizId/questions';
 
-  // Parents
+  static String submitQuizResponse(String studentId) =>
+      '$base/quizzes/$studentId/submit';
+
+  // ===== Parent Endpoints =====
   static String getParentDashboard(String parentId) =>
       '$base/parents/$parentId/dashboard';
 
-  // Admin
+  static String getChildRecommendations(String parentId) =>
+      '$base/parents/$parentId/child/recommendations';
+
+  static String getChildAcademic(String parentId) =>
+      '$base/parents/$parentId/child/academic';
+
+  static String getChildQuizResults(String parentId) =>
+      '$base/parents/$parentId/child/quiz-results';
+
+  // ===== Admin Endpoints =====
   static const String adminDashboard = '$base/admin/dashboard';
+
+  static String getAllUsers({int page = 1, int limit = 20}) =>
+      '$base/admin/users?page=$page&limit=$limit';
+
+  static String deactivateUser(String userId) =>
+      '$base/admin/users/$userId/deactivate';
+
+  static String activateUser(String userId) =>
+      '$base/admin/users/$userId/activate';
+
+  static const String createCareer = '$base/admin/careers';
+
+  static String deleteCareer(String careerId) =>
+      '$base/admin/careers/$careerId';
+
+  static const String createQuiz = '$base/admin/quizzes';
+
+  static String deleteQuiz(String quizId) => '$base/admin/quizzes/$quizId';
+
+  // ===== Health Check =====
+  static const String health = '$base/health';
 }
