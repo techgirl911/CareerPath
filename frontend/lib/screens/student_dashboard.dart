@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../app_colors.dart';
 import '../widgets/career_demand_chart.dart';
 import '../services/student_service.dart';
 import '../models/career_model.dart';
-import '../screens/profile_screen.dart';
-import '../screens/academic_screen.dart';
+import 'profile_screen.dart';
+import 'academic_screen.dart';
 
 class StudentDashboard extends StatefulWidget {
   final String? userName;
@@ -78,7 +77,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              context.go('/');
+              Navigator.of(context)
+                  .pushNamedAndRemoveUntil('/', (route) => false);
             },
             child: const Text('Logout', style: TextStyle(color: Colors.red)),
           ),
@@ -89,6 +89,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    // Switch between tabs
     if (_selectedIndex == 1) {
       return AcademicScreen(studentId: widget.studentId);
     }
@@ -101,6 +102,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       );
     }
 
+    // Home tab
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
@@ -204,9 +206,24 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         Center(
                           child: Padding(
                             padding: const EdgeInsets.all(20),
-                            child: Text(
-                              'No recommendations yet. Take a quiz to get started!',
-                              style: Theme.of(context).textTheme.bodyMedium,
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  size: 40,
+                                  color: AppColors.primary.withOpacity(0.5),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'No recommendations yet',
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Take a quiz to get started!',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                              ],
                             ),
                           ),
                         )
@@ -222,7 +239,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                             )),
                       const SizedBox(height: 24),
 
-                      // Demand Chart
+                      // Demand Chart - Only show if has recommendations
                       if (_recommendations.isNotEmpty)
                         CareerDemandChart(
                           careerData: _recommendations
@@ -248,7 +265,19 @@ class _StudentDashboardState extends State<StudentDashboard> {
                               icon: Icons.quiz,
                               label: 'Take Quiz',
                               onTap: () {
-                                context.push('/quiz/1');
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      // Create dummy quiz
+                                      return const Scaffold(
+                                        body: Center(
+                                          child: Text('Quiz not yet connected'),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                );
                               },
                             ),
                           ),
@@ -258,7 +287,19 @@ class _StudentDashboardState extends State<StudentDashboard> {
                               icon: Icons.upload_file,
                               label: 'Upload Results',
                               onTap: () {
-                                context.push('/upload-results');
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      return const Scaffold(
+                                        body: Center(
+                                          child:
+                                              Text('Upload not yet connected'),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                );
                               },
                             ),
                           ),
@@ -377,7 +418,7 @@ class _CareerCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Match: $matchScore% • Confidence: $demand',
+                    'Match: $matchScore% • $demand',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Colors.grey[600],
                         ),

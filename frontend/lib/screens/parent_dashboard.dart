@@ -1,6 +1,4 @@
-import 'package:careerpath/services/auth_service.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../app_colors.dart';
 import '../services/parent_service.dart';
 import '../models/career_model.dart';
@@ -20,12 +18,9 @@ class ParentDashboard extends StatefulWidget {
 }
 
 class _ParentDashboardState extends State<ParentDashboard> {
-  int _selectedIndex = 0;
   late ParentService _parentService;
 
   List<CareerRecommendation> _childRecommendations = [];
-  // ignore: unused_field
-  Map<String, dynamic> _dashboardData = {};
   bool _isLoading = true;
   String? _error;
 
@@ -41,13 +36,10 @@ class _ParentDashboardState extends State<ParentDashboard> {
       setState(() => _isLoading = true);
 
       if (widget.parentId != null) {
-        final dashboard =
-            await _parentService.getParentDashboard(widget.parentId!);
         final recommendations =
             await _parentService.getChildRecommendations(widget.parentId!);
 
         setState(() {
-          _dashboardData = dashboard;
           _childRecommendations = recommendations;
           _isLoading = false;
         });
@@ -65,53 +57,13 @@ class _ParentDashboardState extends State<ParentDashboard> {
     }
   }
 
-  Future<void> _handleLogout() async {
-    showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-              title: const Text('Logout'),
-              content: const Text('Are you sure you want to logout?'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () async {
-                    Navigator.pop(context);
-                    try {
-                      final authService = AuthService();
-                      await authService.logout();
-                      if (mounted) {
-                        context.go('/');
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Logged out successfully')),
-                        );
-                      }
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error: $e')),
-                      );
-                    }
-                  },
-                  child:
-                      const Text('Logout', style: TextStyle(color: Colors.red)),
-                ),
-              ],
-            ));
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar:
-          AppBar(title: const Text('Parent Portal'), elevation: 0, actions: [
-        IconButton(
-          icon: const Icon(Icons.logout),
-          onPressed: _handleLogout,
-        )
-      ]),
+      appBar: AppBar(
+        title: const Text('Parent Portal'),
+        elevation: 0,
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -178,38 +130,9 @@ class _ParentDashboardState extends State<ParentDashboard> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Performance Overview
-                      Text(
-                        'Performance Overview',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _MetricCard(
-                              label: 'Top Career Match',
-                              value: _childRecommendations.isNotEmpty
-                                  ? _childRecommendations.first.career.title
-                                  : 'Pending',
-                              color: AppColors.studentColor,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _MetricCard(
-                              label: 'Total Recommendations',
-                              value: _childRecommendations.length.toString(),
-                              color: AppColors.success,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-
                       // Recommended Careers
                       Text(
-                        'Recommended Careers',
+                        'Child\'s Career Recommendations',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 12),
@@ -226,203 +149,67 @@ class _ParentDashboardState extends State<ParentDashboard> {
                       else
                         ..._childRecommendations.map((rec) => Padding(
                               padding: const EdgeInsets.only(bottom: 12),
-                              child: _CareerRecommendationCard(
-                                title: rec.career.title,
-                                matchScore: rec.matchScore.toInt(),
-                                icon: Icons.trending_up,
+                              child: Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 50,
+                                        height: 50,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary
+                                              .withOpacity(0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Icon(Icons.trending_up,
+                                            color: AppColors.primary),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              rec.career.title,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .titleLarge,
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              'Match: ${rec.matchScore.toInt()}%',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: Colors.grey[600],
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Text(
+                                        '${rec.matchScore.toInt()}%',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleLarge
+                                            ?.copyWith(
+                                              color: AppColors.primary,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             )),
-                      const SizedBox(height: 24),
-
-                      // Recent Activities
-                      Text(
-                        'Child\'s Activities',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 12),
-                      _ActivityItem(
-                        icon: Icons.quiz,
-                        title: 'Completed Career Assessment',
-                        timestamp: '2 days ago',
-                      ),
-                      _ActivityItem(
-                        icon: Icons.upload_file,
-                        title: 'Uploaded Academic Results',
-                        timestamp: '1 week ago',
-                      ),
-                      _ActivityItem(
-                        icon: Icons.assignment,
-                        title: 'Updated Career Profile',
-                        timestamp: '2 weeks ago',
-                      ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 32),
                     ],
                   ),
                 ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.child_care), label: 'Child'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() => _selectedIndex = index);
-        },
-      ),
-    );
-  }
-}
-
-class _MetricCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-
-  const _MetricCard({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CareerRecommendationCard extends StatelessWidget {
-  final String title;
-  final int matchScore;
-  final IconData icon;
-
-  const _CareerRecommendationCard({
-    required this.title,
-    required this.matchScore,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: AppColors.primary),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Match: $matchScore%',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              '$matchScore%',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ActivityItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String timestamp;
-
-  const _ActivityItem({
-    required this.icon,
-    required this.title,
-    required this.timestamp,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: AppColors.primary, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  timestamp,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
-                      ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
