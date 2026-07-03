@@ -20,13 +20,12 @@ class Quiz {
   factory Quiz.fromJson(Map<String, dynamic> json) {
     return Quiz(
       id: json['id'] ?? '',
-      title: json['title'] ?? '',
+      title: json['title'] ?? 'Quiz',
       description: json['description'] ?? '',
-      questions: json['questions'] != null
-          ? (json['questions'] as List)
-              .map((q) => QuizQuestion.fromJson(q))
-              .toList()
-          : [],
+      questions: (json['questions'] as List?)
+              ?.map((q) => QuizQuestion.fromJson(q))
+              .toList() ??
+          [],
       year: json['year'] ?? DateTime.now().year,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
@@ -37,17 +36,15 @@ class Quiz {
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'title': title,
-      'description': description,
-      'questions': questions.map((q) => q.toJson()).toList(),
-      'year': year,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
-    };
-  }
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'description': description,
+        'questions': questions.map((q) => q.toJson()).toList(),
+        'year': year,
+        'createdAt': createdAt.toIso8601String(),
+        'updatedAt': updatedAt.toIso8601String(),
+      };
 }
 
 class QuizQuestion {
@@ -55,18 +52,18 @@ class QuizQuestion {
   final String quizId;
   final String question;
   final String questionType;
-  final List<String>? options;
-  final String? category;
+  final List<String> options;
   final int order;
+  final String? correctAnswer;
 
   QuizQuestion({
     required this.id,
     required this.quizId,
     required this.question,
     required this.questionType,
-    this.options,
-    this.category,
+    required this.options,
     required this.order,
+    this.correctAnswer,
   });
 
   factory QuizQuestion.fromJson(Map<String, dynamic> json) {
@@ -75,87 +72,74 @@ class QuizQuestion {
       quizId: json['quizId'] ?? '',
       question: json['question'] ?? '',
       questionType: json['questionType'] ?? 'single_choice',
-      options:
-          json['options'] != null ? List<String>.from(json['options']) : null,
-      category: json['category'],
-      order: json['order'] ?? 0,
+      options: List<String>.from(json['options'] ?? []),
+      order: json['order'] ?? json['questionOrder'] ?? 1,
+      correctAnswer: json['correctAnswer'],
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'quizId': quizId,
-      'question': question,
-      'questionType': questionType,
-      'options': options,
-      'category': category,
-      'order': order,
-    };
-  }
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'quizId': quizId,
+        'question': question,
+        'questionType': questionType,
+        'options': options,
+        'order': order,
+        'correctAnswer': correctAnswer,
+      };
 }
 
 class QuizResponse {
   final String id;
-  final String quizId;
   final String studentId;
-  final Map<String, dynamic> answers;
-  final double score;
-  final DateTime completedAt;
+  final String quizId;
+  final Map<String, String> answers;
+  final DateTime submittedAt;
 
   QuizResponse({
     required this.id,
-    required this.quizId,
     required this.studentId,
+    required this.quizId,
     required this.answers,
-    required this.score,
-    required this.completedAt,
+    required this.submittedAt,
   });
 
   factory QuizResponse.fromJson(Map<String, dynamic> json) {
     return QuizResponse(
       id: json['id'] ?? '',
-      quizId: json['quizId'] ?? '',
       studentId: json['studentId'] ?? '',
-      answers: json['answers'] ?? {},
-      score: json['score']?.toDouble() ?? 0.0,
-      completedAt: json['completedAt'] != null
-          ? DateTime.parse(json['completedAt'])
+      quizId: json['quizId'] ?? '',
+      answers: Map<String, String>.from(json['answers'] ?? {}),
+      submittedAt: json['submittedAt'] != null
+          ? DateTime.parse(json['submittedAt'])
           : DateTime.now(),
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'quizId': quizId,
-      'studentId': studentId,
-      'answers': answers,
-      'score': score,
-      'completedAt': completedAt.toIso8601String(),
-    };
-  }
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'studentId': studentId,
+        'quizId': quizId,
+        'answers': answers,
+        'submittedAt': submittedAt.toIso8601String(),
+      };
 }
 
 class QuizResult {
   final String id;
   final String studentId;
   final String quizId;
-  final double totalScore;
-  final Map<String, double> categoryScores;
-  final List<String> recommendedCareers;
+  final int score;
+  final int totalQuestions;
   final DateTime completedAt;
-  final DateTime generatedAt;
 
   QuizResult({
     required this.id,
     required this.studentId,
     required this.quizId,
-    required this.totalScore,
-    required this.categoryScores,
-    required this.recommendedCareers,
+    required this.score,
+    required this.totalQuestions,
     required this.completedAt,
-    required this.generatedAt,
   });
 
   factory QuizResult.fromJson(Map<String, dynamic> json) {
@@ -163,33 +147,20 @@ class QuizResult {
       id: json['id'] ?? '',
       studentId: json['studentId'] ?? '',
       quizId: json['quizId'] ?? '',
-      totalScore: json['totalScore']?.toDouble() ?? 0.0,
-      categoryScores: json['categoryScores'] != null
-          ? Map<String, double>.from(
-              json['categoryScores'].map((k, v) => MapEntry(k, v.toDouble())))
-          : {},
-      recommendedCareers: json['recommendedCareers'] != null
-          ? List<String>.from(json['recommendedCareers'])
-          : [],
+      score: json['score'] ?? 0,
+      totalQuestions: json['totalQuestions'] ?? 0,
       completedAt: json['completedAt'] != null
           ? DateTime.parse(json['completedAt'])
-          : DateTime.now(),
-      generatedAt: json['generatedAt'] != null
-          ? DateTime.parse(json['generatedAt'])
           : DateTime.now(),
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'studentId': studentId,
-      'quizId': quizId,
-      'totalScore': totalScore,
-      'categoryScores': categoryScores,
-      'recommendedCareers': recommendedCareers,
-      'completedAt': completedAt.toIso8601String(),
-      'generatedAt': generatedAt.toIso8601String(),
-    };
-  }
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'studentId': studentId,
+        'quizId': quizId,
+        'score': score,
+        'totalQuestions': totalQuestions,
+        'completedAt': completedAt.toIso8601String(),
+      };
 }

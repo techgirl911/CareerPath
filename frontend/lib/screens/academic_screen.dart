@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../app_colors.dart';
 import '../services/student_service.dart';
 import '../models/academic_model.dart';
@@ -25,7 +24,8 @@ class _AcademicScreenState extends State<AcademicScreen> {
   @override
   void initState() {
     super.initState();
-    print('AcademicScreen - studentId: ${widget.studentId}');
+    print('=== AcademicScreen Init ===');
+    print('studentId: ${widget.studentId}');
     _studentService = StudentService();
     _loadAcademicData();
   }
@@ -36,29 +36,27 @@ class _AcademicScreenState extends State<AcademicScreen> {
       setState(() => _isLoading = true);
 
       if (widget.studentId == null || widget.studentId!.isEmpty) {
-        print('Student ID is null or empty');
+        print('ERROR: Student ID is null/empty');
         setState(() {
           _isLoading = false;
-          _error = 'Student ID not provided';
+          _error = 'No student ID provided';
         });
         return;
       }
 
-      print('Fetching results for studentId: ${widget.studentId}');
+      print('Calling getAcademicResults...');
       final results =
           await _studentService.getAcademicResults(widget.studentId!);
 
-      print('Results received: ${results.length} items');
-      results.forEach((r) {
-        print('  - ${r.subjectName}: ${r.grade} (${r.semester})');
-      });
+      print('Got ${results.length} academic results');
 
       setState(() {
         _academicResults = results;
         _isLoading = false;
+        _error = null;
       });
     } catch (e) {
-      print('Error loading academic data: $e');
+      print('ERROR: $e');
       setState(() {
         _error = e.toString();
         _isLoading = false;
@@ -81,36 +79,38 @@ class _AcademicScreenState extends State<AcademicScreen> {
         elevation: 0,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Loading academic data...'),
+                ],
+              ),
+            )
           : _error != null
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: 60,
-                        color: AppColors.error,
-                      ),
+                      Icon(Icons.error_outline,
+                          size: 60, color: AppColors.error),
                       const SizedBox(height: 16),
-                      Text(
-                        'Error',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
+                      const Text('Error Loading Data'),
                       const SizedBox(height: 8),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: Text(
                           _error!,
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium,
+                          style: const TextStyle(fontSize: 12),
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      ElevatedButton.icon(
+                      const SizedBox(height: 16),
+                      ElevatedButton(
                         onPressed: _loadAcademicData,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Retry'),
+                        child: const Text('Retry'),
                       ),
                     ],
                   ),
@@ -126,21 +126,9 @@ class _AcademicScreenState extends State<AcademicScreen> {
                             color: AppColors.primary.withOpacity(0.5),
                           ),
                           const SizedBox(height: 16),
-                          Text(
-                            'No Academic Results Yet',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
+                          const Text('No Academic Results'),
                           const SizedBox(height: 8),
-                          Text(
-                            'Upload your academic results to get started',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                          const SizedBox(height: 24),
-                          ElevatedButton.icon(
-                            onPressed: () => context.push('/upload-results'),
-                            icon: const Icon(Icons.upload_file),
-                            label: const Text('Upload Results'),
-                          ),
+                          const Text('Upload your results to get started'),
                         ],
                       ),
                     )
@@ -219,18 +207,6 @@ class _AcademicScreenState extends State<AcademicScreen> {
                               .map((result) =>
                                   _SubjectResultCard(result: result))
                               .toList(),
-                          const SizedBox(height: 24),
-
-                          // Upload Button
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: ElevatedButton.icon(
-                              onPressed: () => context.push('/upload-results'),
-                              icon: const Icon(Icons.upload_file),
-                              label: const Text('Upload New Results'),
-                            ),
-                          ),
                           const SizedBox(height: 32),
                         ],
                       ),
@@ -306,37 +282,12 @@ class _SubjectResultCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Grade: ${result.grade.toStringAsFixed(2)}',
+                      'Grade: ${result.grade.toStringAsFixed(2)} • ${result.semester}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: Colors.grey[600],
                           ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      result.semester,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[500],
-                          ),
-                    ),
                   ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: _getGradeColor(result.grade).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  '${(result.grade / 4 * 100).toStringAsFixed(0)}%',
-                  style: TextStyle(
-                    color: _getGradeColor(result.grade),
-                    fontWeight: FontWeight.w500,
-                    fontSize: 12,
-                  ),
                 ),
               ),
             ],

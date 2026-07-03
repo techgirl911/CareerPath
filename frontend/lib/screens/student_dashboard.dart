@@ -1,11 +1,11 @@
-import 'package:careerpath/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../app_colors.dart';
 import '../widgets/career_demand_chart.dart';
 import '../services/student_service.dart';
-import '../services/career_service.dart';
 import '../models/career_model.dart';
+import '../screens/profile_screen.dart';
+import '../screens/academic_screen.dart';
 
 class StudentDashboard extends StatefulWidget {
   final String? userName;
@@ -26,8 +26,6 @@ class StudentDashboard extends StatefulWidget {
 class _StudentDashboardState extends State<StudentDashboard> {
   int _selectedIndex = 0;
   late StudentService _studentService;
-  // ignore: unused_field
-  late CareerService _careerService;
 
   List<CareerRecommendation> _recommendations = [];
   bool _isLoading = true;
@@ -37,7 +35,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
   void initState() {
     super.initState();
     _studentService = StudentService();
-    _careerService = CareerService();
     _loadData();
   }
 
@@ -79,22 +76,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () async {
+            onPressed: () {
               Navigator.pop(context);
-              try {
-                final authService = AuthService();
-                await authService.logout();
-                if (mounted) {
-                  context.go('/');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Logged out successfully')),
-                  );
-                }
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error: $e')),
-                );
-              }
+              context.go('/');
             },
             child: const Text('Logout', style: TextStyle(color: Colors.red)),
           ),
@@ -105,6 +89,18 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    if (_selectedIndex == 1) {
+      return AcademicScreen(studentId: widget.studentId);
+    }
+
+    if (_selectedIndex == 2) {
+      return ProfileScreen(
+        userName: widget.userName,
+        userEmail: widget.userEmail,
+        userId: widget.studentId,
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
@@ -281,18 +277,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
         currentIndex: _selectedIndex,
         onTap: (index) {
           setState(() => _selectedIndex = index);
-          if (index == 1) {
-            print(
-                'Navigating to Academic Profile for studentId: ${widget.studentId}');
-            context.push('/academic', extra: widget.studentId);
-          } else if (index == 2) {
-            print('Navigating to Profile for studentId: ${widget.studentId}');
-            context.push('/profile', extra: {
-              'userName': widget.userName,
-              'userEmail': widget.userEmail,
-              'userId': widget.studentId,
-            });
-          }
         },
       ),
     );

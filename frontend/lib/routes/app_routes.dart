@@ -96,7 +96,7 @@ class AppRoutes {
         builder: (context, state) {
           final dummyQuiz = Quiz(
             id: '1',
-            title: 'Career Assessment 2024',
+            title: 'Career Assessment 2026',
             description: 'Discover your career path',
             questions: [
               QuizQuestion(
@@ -129,7 +129,7 @@ class AppRoutes {
                 order: 3,
               ),
             ],
-            year: 2024,
+            year: 2026,
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
           );
