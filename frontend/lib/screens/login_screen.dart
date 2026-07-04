@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       print('========== LOGIN START ==========');
       print('Email: ${_emailController.text.trim()}');
-      print('Password length: ${_passwordController.text.length}');
+      print('Role: ${widget.userRole}');
 
       final user = await _authService.login(
         email: _emailController.text.trim(),
@@ -55,15 +55,17 @@ class _LoginScreenState extends State<LoginScreen> {
       print('User: ${user.fullName}');
       print('Role: ${user.role}');
       print('ID: ${user.id}');
-      print('========== LOGIN SUCCESS END ==========');
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Welcome ${user.fullName}!')),
+        SnackBar(
+          content: Text('Welcome ${user.fullName}!'),
+          backgroundColor: AppColors.success,
+        ),
       );
 
-      Future.delayed(const Duration(milliseconds: 1500), () {
+      Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted) {
           print('========== NAVIGATING ==========');
           print('Role: ${user.role}');
@@ -71,19 +73,19 @@ class _LoginScreenState extends State<LoginScreen> {
           if (user.role == 'student') {
             print('Going to student dashboard');
             context.go(
-              '${AppRoutes.studentDashboard}?studentId=${user.id}',
+              '/student-dashboard?studentId=${user.id}',
               extra: user.fullName,
             );
           } else if (user.role == 'parent') {
             print('Going to parent dashboard');
             context.go(
-              '${AppRoutes.parentDashboard}?parentId=${user.id}',
+              '/parent-dashboard?parentId=${user.id}',
               extra: user.fullName,
             );
           } else if (user.role == 'admin') {
             print('Going to admin dashboard');
             context.go(
-              '${AppRoutes.adminDashboard}?adminId=${user.id}',
+              '/admin-dashboard?adminId=${user.id}',
               extra: user.fullName,
             );
           }
@@ -97,6 +99,13 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _errorMessage = e.toString();
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Login failed: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -109,6 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sign In'),
+        elevation: 0,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -126,25 +136,38 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Sign in to continue',
+                  'Sign in to continue as ${widget.userRole}',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Colors.grey[600],
                       ),
                 ),
                 const SizedBox(height: 32),
+
+                // Error Message
                 if (_errorMessage != null)
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: AppColors.error.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.error),
                     ),
-                    child: Text(
-                      _errorMessage!,
-                      style: TextStyle(color: AppColors.error),
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline, color: AppColors.error),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: TextStyle(color: AppColors.error),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
+
+                // Email Field
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -152,6 +175,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     labelText: 'Email Address',
                     hintText: 'Enter your email',
                     prefixIcon: const Icon(Icons.email_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   validator: (value) {
                     if (value?.isEmpty ?? true) {
@@ -164,6 +190,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
                 const SizedBox(height: 20),
+
+                // Password Field
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
@@ -181,6 +209,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         setState(() => _obscurePassword = !_obscurePassword);
                       },
                     ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   validator: (value) {
                     if (value?.isEmpty ?? true) {
@@ -192,7 +223,25 @@ class _LoginScreenState extends State<LoginScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 8),
+
+                // Forgot Password
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Password reset coming soon!'),
+                        ),
+                      );
+                    },
+                    child: const Text('Forgot Password?'),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Login Button
                 SizedBox(
                   width: double.infinity,
                   height: 54,
@@ -208,10 +257,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                   AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
-                        : const Text('Sign In'),
+                        : const Text(
+                            'Sign In',
+                            style: TextStyle(fontSize: 16),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 24),
+
+                // Sign Up Link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -222,11 +276,24 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextButton(
                       onPressed: () {
                         context.push(
-                            '${AppRoutes.signup}?role=${widget.userRole}');
+                          '/signup?role=${widget.userRole}',
+                        );
                       },
                       child: const Text('Sign Up'),
                     ),
                   ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // Back Button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('Back'),
+                  ),
                 ),
               ],
             ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../app_colors.dart';
 import '../app_constants.dart';
+import '../app_colors.dart';
 
 class UploadResultsScreen extends StatefulWidget {
   const UploadResultsScreen({Key? key}) : super(key: key);
@@ -10,94 +10,111 @@ class UploadResultsScreen extends StatefulWidget {
 }
 
 class _UploadResultsScreenState extends State<UploadResultsScreen> {
-  String? _selectedDocumentType;
+  String? _selectedDocType;
   String? _selectedFileName;
   bool _isUploading = false;
-  double _uploadProgress = 0.0;
+  String? _uploadMessage;
 
-  final List<String> _documentTypes = [
-    AppConstants.docTypeTranscript,
-    AppConstants.docTypeReportCard,
-    AppConstants.docTypeCertificate,
+  final List<Map<String, String>> _docTypes = [
+    {
+      'value': AppConstants.docTypeTranscript,
+      'label': 'Transcript',
+      'description': 'Official academic transcript'
+    },
+    {
+      'value': AppConstants.docTypeReportCard,
+      'label': 'Report Card',
+      'description': 'Student report card'
+    },
+    {
+      'value': AppConstants.docTypeCertificate,
+      'label': 'Certificate',
+      'description': 'Academic certificate'
+    },
+    {
+      'value': AppConstants.docTypeOther,
+      'label': 'Other',
+      'description': 'Other academic document'
+    },
   ];
 
   Future<void> _pickFile() async {
-    // TODO: Implement file picker
-    // For now, show a dialog
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select File'),
-        content: const Text('File picker will be implemented here'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() => _selectedFileName = 'sample_transcript.pdf');
-              Navigator.pop(context);
-            },
-            child: const Text('Use Sample'),
-          ),
-        ],
+    // Simulate file picking
+    setState(() {
+      _selectedFileName = 'sample_transcript.pdf';
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('File selected: sample_transcript.pdf'),
+        duration: Duration(seconds: 2),
       ),
     );
   }
 
-  Future<void> _uploadDocument() async {
-    if (_selectedDocumentType == null) {
+  Future<void> _uploadFile() async {
+    if (_selectedDocType == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select document type')),
+        const SnackBar(
+          content: Text('Please select document type'),
+          backgroundColor: Colors.orange,
+        ),
       );
       return;
     }
 
     if (_selectedFileName == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a file')),
+        const SnackBar(
+          content: Text('Please select a file'),
+          backgroundColor: Colors.orange,
+        ),
       );
       return;
     }
 
-    setState(() => _isUploading = true);
+    setState(() {
+      _isUploading = true;
+      _uploadMessage = null;
+    });
 
     try {
-      // Simulate upload with progress
-      for (int i = 0; i <= 100; i += 10) {
-        await Future.delayed(const Duration(milliseconds: 200));
-        setState(() => _uploadProgress = i / 100);
-      }
+      // Simulate upload
+      await Future.delayed(const Duration(seconds: 2));
 
-      // TODO: Call student service to upload document
-      // final document = await _studentService.uploadDocument(
-      //   studentId: studentId,
-      //   documentType: _selectedDocumentType!,
-      //   filePath: filePath,
-      //   fileName: _selectedFileName!,
-      // );
-
-      if (!mounted) return;
+      setState(() {
+        _uploadMessage = 'File uploaded successfully!';
+        _selectedFileName = null;
+        _selectedDocType = null;
+        _isUploading = false;
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Document uploaded successfully!')),
+        SnackBar(
+          content: const Text('Upload successful!'),
+          backgroundColor: AppColors.success,
+          duration: const Duration(seconds: 2),
+        ),
       );
 
       // Reset form
-      setState(() {
-        _selectedDocumentType = null;
-        _selectedFileName = null;
-        _uploadProgress = 0.0;
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          setState(() => _uploadMessage = null);
+        }
       });
     } catch (e) {
+      setState(() {
+        _uploadMessage = 'Upload failed: $e';
+        _isUploading = false;
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: AppColors.error,
+        ),
       );
-    } finally {
-      if (mounted) {
-        setState(() => _isUploading = false);
-      }
     }
   }
 
@@ -105,324 +122,196 @@ class _UploadResultsScreenState extends State<UploadResultsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Upload Results'),
+        title: const Text('Upload Academic Results'),
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
-            Text(
-              'Upload Academic Documents',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+            // Info Card
+            Card(
+              color: AppColors.primary.withOpacity(0.1),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Upload your academic documents to help us recommend suitable careers',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Help us understand your academic performance better',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
-                  ),
-            ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
+
+            // Success Message
+            if (_uploadMessage != null)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.success),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: AppColors.success),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _uploadMessage!,
+                        style: TextStyle(color: AppColors.success),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 24),
 
             // Document Type Selection
             Text(
               'Document Type',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 12),
-            ..._documentTypes.map((type) {
-              final isSelected = _selectedDocumentType == type;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Material(
-                  child: InkWell(
-                    onTap: () => setState(() => _selectedDocumentType = type),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: isSelected
-                              ? AppColors.primary
-                              : Colors.grey[300]!,
-                          width: isSelected ? 2 : 1,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        color: isSelected
-                            ? AppColors.primary.withOpacity(0.05)
-                            : Colors.transparent,
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: isSelected
-                                    ? AppColors.primary
-                                    : Colors.grey[400]!,
-                                width: 2,
-                              ),
-                            ),
-                            child: isSelected
-                                ? Center(
-                                    child: Container(
-                                      width: 12,
-                                      height: 12,
-                                      decoration: const BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: AppColors.primary,
-                                      ),
-                                    ),
-                                  )
-                                : null,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _getDocumentLabel(type),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _getDocumentDescription(type),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        color: Colors.grey[600],
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+            ..._docTypes.map((docType) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Card(
+                    color: _selectedDocType == docType['value']
+                        ? AppColors.primary.withOpacity(0.1)
+                        : null,
+                    child: RadioListTile<String>(
+                      title: Text(docType['label']!),
+                      subtitle: Text(docType['description']!),
+                      value: docType['value']!,
+                      groupValue: _selectedDocType,
+                      onChanged: (value) {
+                        setState(() => _selectedDocType = value);
+                      },
                     ),
                   ),
-                ),
-              );
-            }).toList(),
-            const SizedBox(height: 32),
+                )),
+            const SizedBox(height: 24),
 
-            // File Upload Section
+            // File Selection
             Text(
               'Select File',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 12),
-            _FileUploadBox(
-              fileName: _selectedFileName,
-              onTap: _isUploading ? null : _pickFile,
-            ),
-            const SizedBox(height: 32),
-
-            // Upload Progress
-            if (_isUploading) ...[
-              Text(
-                'Uploading...',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_selectedFileName != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.insert_drive_file,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _selectedFileName!,
+                                    style:
+                                        Theme.of(context).textTheme.titleLarge,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Selected',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color: AppColors.success,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () {
+                                setState(() => _selectedFileName = null);
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _pickFile,
+                        icon: const Icon(Icons.attach_file),
+                        label: const Text('Choose File'),
+                      ),
                     ),
-              ),
-              const SizedBox(height: 12),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: _uploadProgress,
-                  minHeight: 8,
-                  backgroundColor: Colors.grey[300],
-                  valueColor:
-                      const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Supported formats: PDF, JPG, PNG, DOC',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.grey[600],
+                          ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                '${(_uploadProgress * 100).toStringAsFixed(0)}%',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
-                    ),
-              ),
-              const SizedBox(height: 32),
-            ],
+            ),
+            const SizedBox(height: 32),
 
             // Upload Button
             SizedBox(
               width: double.infinity,
               height: 54,
-              child: ElevatedButton(
-                onPressed: _isUploading ? null : _uploadDocument,
-                child: _isUploading
+              child: ElevatedButton.icon(
+                onPressed: _isUploading ? null : _uploadFile,
+                icon: _isUploading
                     ? const SizedBox(
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
-                    : const Text('Upload Document'),
+                    : const Icon(Icons.cloud_upload),
+                label: Text(
+                  _isUploading ? 'Uploading...' : 'Upload Document',
+                  style: const TextStyle(fontSize: 16),
+                ),
               ),
             ),
             const SizedBox(height: 16),
 
-            // Info Box
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.info.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: AppColors.info,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'File Requirements',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.info,
-                                  ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Max 5MB • PDF, JPG, PNG formats only',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.grey[600],
-                                  ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+            // Cancel Button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
               ),
             ),
+            const SizedBox(height: 24),
           ],
-        ),
-      ),
-    );
-  }
-
-  String _getDocumentLabel(String type) {
-    switch (type) {
-      case 'transcript':
-        return 'Transcript';
-      case 'report_card':
-        return 'Report Card';
-      case 'certificate':
-        return 'Certificate';
-      default:
-        return type;
-    }
-  }
-
-  String _getDocumentDescription(String type) {
-    switch (type) {
-      case 'transcript':
-        return 'Your official academic transcript';
-      case 'report_card':
-        return 'Your school report card';
-      case 'certificate':
-        return 'Achievement or course certificate';
-      default:
-        return '';
-    }
-  }
-}
-
-class _FileUploadBox extends StatelessWidget {
-  final String? fileName;
-  final VoidCallback? onTap;
-
-  const _FileUploadBox({
-    this.fileName,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: Colors.grey[300]!,
-              width: 2,
-              strokeAlign: BorderSide.strokeAlignCenter,
-            ),
-            borderRadius: BorderRadius.circular(12),
-            color: Colors.grey[50],
-          ),
-          child: Column(
-            children: [
-              if (fileName == null)
-                Icon(
-                  Icons.cloud_upload_outlined,
-                  size: 48,
-                  color: AppColors.primary,
-                )
-              else
-                Icon(
-                  Icons.insert_drive_file,
-                  size: 48,
-                  color: AppColors.success,
-                ),
-              const SizedBox(height: 16),
-              Text(
-                fileName ?? 'Tap to upload a file',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: fileName == null ? Colors.grey[600] : null,
-                    ),
-              ),
-              if (fileName == null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    'or drag and drop',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[500],
-                        ),
-                  ),
-                ),
-            ],
-          ),
         ),
       ),
     );

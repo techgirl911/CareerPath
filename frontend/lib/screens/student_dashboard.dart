@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../app_colors.dart';
 import '../widgets/career_demand_chart.dart';
 import '../services/student_service.dart';
 import '../models/career_model.dart';
-import 'profile_screen.dart';
-import 'academic_screen.dart';
 
 class StudentDashboard extends StatefulWidget {
   final String? userName;
@@ -23,7 +22,6 @@ class StudentDashboard extends StatefulWidget {
 }
 
 class _StudentDashboardState extends State<StudentDashboard> {
-  int _selectedIndex = 0;
   late StudentService _studentService;
 
   List<CareerRecommendation> _recommendations = [];
@@ -77,8 +75,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.of(context)
-                  .pushNamedAndRemoveUntil('/', (route) => false);
+              context.go('/');
             },
             child: const Text('Logout', style: TextStyle(color: Colors.red)),
           ),
@@ -89,20 +86,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    // Switch between tabs
-    if (_selectedIndex == 1) {
-      return AcademicScreen(studentId: widget.studentId);
-    }
-
-    if (_selectedIndex == 2) {
-      return ProfileScreen(
-        userName: widget.userName,
-        userEmail: widget.userEmail,
-        userId: widget.studentId,
-      );
-    }
-
-    // Home tab
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
@@ -239,7 +222,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                             )),
                       const SizedBox(height: 24),
 
-                      // Demand Chart - Only show if has recommendations
+                      // Demand Chart
                       if (_recommendations.isNotEmpty)
                         CareerDemandChart(
                           careerData: _recommendations
@@ -265,17 +248,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
                               icon: Icons.quiz,
                               label: 'Take Quiz',
                               onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) {
-                                      // Create dummy quiz
-                                      return const Scaffold(
-                                        body: Center(
-                                          child: Text('Quiz not yet connected'),
-                                        ),
-                                      );
-                                    },
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Quiz feature coming soon!'),
                                   ),
                                 );
                               },
@@ -287,17 +262,10 @@ class _StudentDashboardState extends State<StudentDashboard> {
                               icon: Icons.upload_file,
                               label: 'Upload Results',
                               onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) {
-                                      return const Scaffold(
-                                        body: Center(
-                                          child:
-                                              Text('Upload not yet connected'),
-                                        ),
-                                      );
-                                    },
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content:
+                                        Text('Upload feature coming soon!'),
                                   ),
                                 );
                               },
@@ -315,9 +283,24 @@ class _StudentDashboardState extends State<StudentDashboard> {
           BottomNavigationBarItem(icon: Icon(Icons.school), label: 'Academic'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
-        currentIndex: _selectedIndex,
         onTap: (index) {
-          setState(() => _selectedIndex = index);
+          if (index == 0) {
+            // Home - stay on dashboard
+          } else if (index == 1) {
+            // Academic
+            context.go(
+              '/student-dashboard/academic?studentId=${widget.studentId}',
+            );
+          } else if (index == 2) {
+            // Profile
+            context.go(
+              '/student-dashboard/profile?studentId=${widget.studentId}',
+              extra: {
+                'userName': widget.userName,
+                'userEmail': widget.userEmail,
+              },
+            );
+          }
         },
       ),
     );
