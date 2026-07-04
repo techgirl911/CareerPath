@@ -44,7 +44,7 @@ class _AdminDashboardState extends State<AdminDashboard>
 
   Future<void> _loadData() async {
     try {
-      print('Loading admin dashboard data...');
+      print('Loading admin data...');
       setState(() => _isLoading = true);
 
       final stats = await _adminService.getAdminDashboard();
@@ -58,7 +58,7 @@ class _AdminDashboardState extends State<AdminDashboard>
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading admin data: $e');
+      print('Error: $e');
       setState(() {
         _error = e.toString();
         _isLoading = false;
@@ -87,6 +87,19 @@ class _AdminDashboardState extends State<AdminDashboard>
         ],
       ),
     );
+  }
+
+  Color _getRoleColor(String role) {
+    switch (role.toLowerCase()) {
+      case 'student':
+        return AppColors.studentColor;
+      case 'parent':
+        return AppColors.parentColor;
+      case 'admin':
+        return AppColors.adminColor;
+      default:
+        return AppColors.primary;
+    }
   }
 
   @override
@@ -128,7 +141,6 @@ class _AdminDashboardState extends State<AdminDashboard>
                         child: Text(
                           _error!,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 12),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -189,36 +201,6 @@ class _AdminDashboardState extends State<AdminDashboard>
                                 color: AppColors.warning,
                               ),
                             ],
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'Recent Activity',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: 12),
-                          Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                children: [
-                                  _ActivityItem(
-                                    icon: Icons.person_add,
-                                    title: 'New user registered',
-                                    time: '2 hours ago',
-                                  ),
-                                  _ActivityItem(
-                                    icon: Icons.work,
-                                    title: 'Career added',
-                                    time: '5 hours ago',
-                                  ),
-                                  _ActivityItem(
-                                    icon: Icons.quiz,
-                                    title: 'Quiz completed',
-                                    time: '1 day ago',
-                                  ),
-                                ],
-                              ),
-                            ),
                           ),
                         ],
                       ),
@@ -368,19 +350,6 @@ class _AdminDashboardState extends State<AdminDashboard>
                 ),
     );
   }
-
-  Color _getRoleColor(String role) {
-    switch (role.toLowerCase()) {
-      case 'student':
-        return AppColors.studentColor;
-      case 'parent':
-        return AppColors.parentColor;
-      case 'admin':
-        return AppColors.adminColor;
-      default:
-        return AppColors.primary;
-    }
-  }
 }
 
 class _StatCard extends StatelessWidget {
@@ -430,58 +399,6 @@ class _StatCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _ActivityItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String time;
-
-  const _ActivityItem({
-    required this.icon,
-    required this.title,
-    required this.time,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: AppColors.primary, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
-                ),
-                Text(
-                  time,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
-                      ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

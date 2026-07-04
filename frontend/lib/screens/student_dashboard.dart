@@ -23,7 +23,6 @@ class StudentDashboard extends StatefulWidget {
 
 class _StudentDashboardState extends State<StudentDashboard> {
   late StudentService _studentService;
-
   List<CareerRecommendation> _recommendations = [];
   bool _isLoading = true;
   String? _error;
@@ -201,11 +200,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
                                   'No recommendations yet',
                                   style: Theme.of(context).textTheme.bodyMedium,
                                 ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'Take a quiz to get started!',
-                                  style: TextStyle(fontSize: 12),
-                                ),
                               ],
                             ),
                           ),
@@ -217,7 +211,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
                                 title: rec.career.title,
                                 matchScore: rec.matchScore.toInt(),
                                 demand: rec.confidence,
-                                icon: Icons.trending_up,
                               ),
                             )),
                       const SizedBox(height: 24),
@@ -233,47 +226,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                                   ))
                               .toList(),
                         ),
-                      const SizedBox(height: 24),
-
-                      // Quick Actions
-                      Text(
-                        'Quick Actions',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _QuickActionButton(
-                              icon: Icons.quiz,
-                              label: 'Take Quiz',
-                              onTap: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Quiz feature coming soon!'),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _QuickActionButton(
-                              icon: Icons.upload_file,
-                              label: 'Upload Results',
-                              onTap: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content:
-                                        Text('Upload feature coming soon!'),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 32),
                     ],
                   ),
                 ),
@@ -284,22 +237,25 @@ class _StudentDashboardState extends State<StudentDashboard> {
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
         onTap: (index) {
+          final encodedName = Uri.encodeComponent(widget.userName ?? 'User');
+          final encodedEmail = Uri.encodeComponent(widget.userEmail ?? '');
+
+          print('Bottom Nav tapped: $index');
+          print('StudentID: ${widget.studentId}');
+
           if (index == 0) {
-            // Home - stay on dashboard
+            print('Home selected');
           } else if (index == 1) {
-            // Academic
-            context.go(
-              '/student-dashboard/academic?studentId=${widget.studentId}',
-            );
+            print('going to academic');
+            final route = '/academic?studentId=${widget.studentId}';
+            print('navigation to: $route');
+            context.go(route);
           } else if (index == 2) {
-            // Profile
-            context.go(
-              '/student-dashboard/profile?studentId=${widget.studentId}',
-              extra: {
-                'userName': widget.userName,
-                'userEmail': widget.userEmail,
-              },
-            );
+            print('Going to Profile');
+            final route =
+                '/profile?studentId=${widget.studentId}&userName=$encodedName&userEmail=$encodedEmail';
+            print('Navigating to: $route');
+            context.go(route);
           }
         },
       ),
@@ -365,13 +321,11 @@ class _CareerCard extends StatelessWidget {
   final String title;
   final int matchScore;
   final String demand;
-  final IconData icon;
 
   const _CareerCard({
     required this.title,
     required this.matchScore,
     required this.demand,
-    required this.icon,
   });
 
   @override
@@ -388,7 +342,7 @@ class _CareerCard extends StatelessWidget {
                 color: AppColors.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: AppColors.primary),
+              child: Icon(Icons.trending_up, color: AppColors.primary),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -409,45 +363,7 @@ class _CareerCard extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, size: 16),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _QuickActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _QuickActionButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 24),
-          child: Column(
-            children: [
-              Icon(icon, size: 32, color: AppColors.primary),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-              ),
-            ],
-          ),
         ),
       ),
     );

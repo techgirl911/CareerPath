@@ -20,7 +20,6 @@ class ParentDashboard extends StatefulWidget {
 
 class _ParentDashboardState extends State<ParentDashboard> {
   late ParentService _parentService;
-
   List<CareerRecommendation> _childRecommendations = [];
   bool _isLoading = true;
   String? _error;
@@ -35,7 +34,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
 
   Future<void> _loadData() async {
     try {
-      print('Loading parent dashboard data...');
+      print('Loading parent data...');
       setState(() => _isLoading = true);
 
       if (widget.parentId != null) {
@@ -55,7 +54,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
         });
       }
     } catch (e) {
-      print('Error loading parent data: $e');
+      print('Error: $e');
       setState(() {
         _error = e.toString();
         _isLoading = false;
@@ -116,7 +115,6 @@ class _ParentDashboardState extends State<ParentDashboard> {
                         child: Text(
                           _error!,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 12),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -132,7 +130,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Parent Welcome
+                      // Welcome Card
                       Card(
                         child: Padding(
                           padding: const EdgeInsets.all(20),
@@ -178,7 +176,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Child Status Card
+                      // Status Card
                       Card(
                         color: AppColors.primary.withOpacity(0.05),
                         child: Padding(
@@ -227,7 +225,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Recommended Careers
+                      // Recommendations
                       Text(
                         'Child\'s Career Recommendations',
                         style: Theme.of(context).textTheme.titleLarge,

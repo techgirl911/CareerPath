@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-// ignore: unused_import
-import '../routes/app_routes.dart';
 import '../services/auth_service.dart';
 import '../app_colors.dart';
 
@@ -45,7 +43,6 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       print('========== LOGIN START ==========');
       print('Email: ${_emailController.text.trim()}');
-      print('Role: ${widget.userRole}');
 
       final user = await _authService.login(
         email: _emailController.text.trim(),
@@ -71,32 +68,33 @@ class _LoginScreenState extends State<LoginScreen> {
           print('========== NAVIGATING ==========');
           print('Role: ${user.role}');
 
+          final encodedName = Uri.encodeComponent(user.fullName);
+          final encodedEmail = Uri.encodeComponent(user.email);
+
           if (user.role == 'student') {
-            print('Going to student dashboard');
+            print('Going to student dashboard with ID: ${user.id}');
             context.go(
-              '/student-dashboard?studentId=${user.id}',
-              extra: user.fullName,
+              '/student-dashboard?studentId=${user.id}&userName=$encodedName&userEmail=$encodedEmail',
             );
           } else if (user.role == 'parent') {
-            print('Going to parent dashboard');
+            print('Going to parent dashboard with ID: ${user.id}');
             context.go(
-              '/parent-dashboard?parentId=${user.id}',
-              extra: user.fullName,
+              '/parent-dashboard?parentId=${user.id}&parentName=$encodedName',
             );
           } else if (user.role == 'admin') {
-            print('Going to admin dashboard');
+            print('Going to admin dashboard with ID: ${user.id}');
             context.go(
-              '/admin-dashboard?adminId=${user.id}',
-              extra: user.fullName,
+              '/admin-dashboard?adminId=${user.id}&adminName=$encodedName',
             );
+          } else {
+            print('Unknown role: ${user.role}');
           }
         }
       });
     } catch (e) {
       print('========== LOGIN ERROR ==========');
-      print('Error type: ${e.runtimeType}');
       print('Error: $e');
-      print('========== LOGIN ERROR END ==========');
+
       setState(() {
         _errorMessage = e.toString();
       });
@@ -174,7 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     labelText: 'Email Address',
-                    hintText: 'Enter your email',
+                    hintText: 'student@example.com',
                     prefixIcon: const Icon(Icons.email_outlined),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -198,7 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     labelText: 'Password',
-                    hintText: 'Enter your password',
+                    hintText: 'password123',
                     prefixIcon: const Icon(Icons.lock_outlined),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -218,29 +216,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     if (value?.isEmpty ?? true) {
                       return 'Password is required';
                     }
-                    if (value!.length < 6) {
-                      return 'Password must be at least 6 characters';
-                    }
                     return null;
                   },
                 ),
-                const SizedBox(height: 8),
-
-                // Forgot Password
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Password reset coming soon!'),
-                        ),
-                      );
-                    },
-                    child: const Text('Forgot Password?'),
-                  ),
-                ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
 
                 // Login Button
                 SizedBox(
