@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+// ignore: unused_import
 import 'package:go_router/go_router.dart';
 import 'app_theme.dart';
 import 'routes/app_routes.dart';

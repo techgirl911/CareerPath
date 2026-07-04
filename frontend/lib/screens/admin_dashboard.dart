@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../app_colors.dart';
 import '../services/admin_service.dart';
 
@@ -29,6 +30,7 @@ class _AdminDashboardState extends State<AdminDashboard>
   @override
   void initState() {
     super.initState();
+    print('AdminDashboard Init - ID: ${widget.adminId}');
     _tabController = TabController(length: 4, vsync: this);
     _adminService = AdminService();
     _loadData();
@@ -42,22 +44,49 @@ class _AdminDashboardState extends State<AdminDashboard>
 
   Future<void> _loadData() async {
     try {
+      print('Loading admin dashboard data...');
       setState(() => _isLoading = true);
 
       final stats = await _adminService.getAdminDashboard();
       final users = await _adminService.getAllUsers();
 
+      print('Got admin stats and ${users.length} users');
+
       setState(() {
-        _dashboardStats = stats['statistics'] ?? {};
+        _dashboardStats = stats['statistics'] ?? stats;
         _users = users;
         _isLoading = false;
       });
     } catch (e) {
+      print('Error loading admin data: $e');
       setState(() {
         _error = e.toString();
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _handleLogout() async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.go('/');
+            },
+            child: const Text('Logout', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -66,6 +95,12 @@ class _AdminDashboardState extends State<AdminDashboard>
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _handleLogout,
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -83,7 +118,19 @@ class _AdminDashboardState extends State<AdminDashboard>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('Error: $_error'),
+                      Icon(Icons.error_outline,
+                          size: 60, color: AppColors.error),
+                      const SizedBox(height: 16),
+                      const Text('Error Loading Data'),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Text(
+                          _error!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _loadData,
@@ -102,7 +149,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'System Statistics',
+                            'System Overview',
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                           const SizedBox(height: 16),
@@ -114,16 +161,10 @@ class _AdminDashboardState extends State<AdminDashboard>
                             physics: const NeverScrollableScrollPhysics(),
                             children: [
                               _StatCard(
-                                label: 'Total Students',
-                                value: '0',
-                                icon: Icons.person,
-                                color: AppColors.studentColor,
-                              ),
-                              _StatCard(
-                                label: 'Total Parents',
-                                value: '0',
-                                icon: Icons.family_restroom,
-                                color: AppColors.parentColor,
+                                label: 'Total Users',
+                                value: _users.length.toString(),
+                                icon: Icons.people,
+                                color: AppColors.primary,
                               ),
                               _StatCard(
                                 label: 'Total Careers',
@@ -141,11 +182,48 @@ class _AdminDashboardState extends State<AdminDashboard>
                                 icon: Icons.quiz,
                                 color: AppColors.success,
                               ),
+                              _StatCard(
+                                label: 'Active Sessions',
+                                value: '5',
+                                icon: Icons.login,
+                                color: AppColors.warning,
+                              ),
                             ],
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Recent Activity',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 12),
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                children: [
+                                  _ActivityItem(
+                                    icon: Icons.person_add,
+                                    title: 'New user registered',
+                                    time: '2 hours ago',
+                                  ),
+                                  _ActivityItem(
+                                    icon: Icons.work,
+                                    title: 'Career added',
+                                    time: '5 hours ago',
+                                  ),
+                                  _ActivityItem(
+                                    icon: Icons.quiz,
+                                    title: 'Quiz completed',
+                                    time: '1 day ago',
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
+
                     // Users Tab
                     SingleChildScrollView(
                       padding: const EdgeInsets.all(16),
@@ -161,9 +239,21 @@ class _AdminDashboardState extends State<AdminDashboard>
                             Center(
                               child: Padding(
                                 padding: const EdgeInsets.all(20),
-                                child: Text(
-                                  'No users found',
-                                  style: Theme.of(context).textTheme.bodyMedium,
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.people_outline,
+                                      size: 40,
+                                      color: AppColors.primary.withOpacity(0.5),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'No users found',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium,
+                                    ),
+                                  ],
                                 ),
                               ),
                             )
@@ -171,18 +261,46 @@ class _AdminDashboardState extends State<AdminDashboard>
                             ..._users.map((user) => Card(
                                   child: ListTile(
                                     leading: CircleAvatar(
-                                      child: Text(user['fullName']
-                                          .toString()
-                                          .substring(0, 1)),
+                                      backgroundColor:
+                                          AppColors.primary.withOpacity(0.2),
+                                      child: Text(
+                                        (user['fullName'] ?? 'U')
+                                            .toString()
+                                            .substring(0, 1)
+                                            .toUpperCase(),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
                                     title: Text(user['fullName'] ?? 'Unknown'),
                                     subtitle: Text(user['email'] ?? 'N/A'),
-                                    trailing: Text(user['role'] ?? 'Unknown'),
+                                    trailing: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: _getRoleColor(user['role'] ?? '')
+                                            .withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        user['role'] ?? 'Unknown',
+                                        style: TextStyle(
+                                          color:
+                                              _getRoleColor(user['role'] ?? ''),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 )),
                         ],
                       ),
                     ),
+
                     // Careers Tab
                     Center(
                       child: Padding(
@@ -197,13 +315,24 @@ class _AdminDashboardState extends State<AdminDashboard>
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              'Career management coming soon',
-                              style: Theme.of(context).textTheme.bodyMedium,
+                              'Career Management',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Coming soon',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
                             ),
                           ],
                         ),
                       ),
                     ),
+
                     // Quizzes Tab
                     Center(
                       child: Padding(
@@ -218,8 +347,18 @@ class _AdminDashboardState extends State<AdminDashboard>
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              'Quiz management coming soon',
-                              style: Theme.of(context).textTheme.bodyMedium,
+                              'Quiz Management',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Coming soon',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
                             ),
                           ],
                         ),
@@ -228,6 +367,19 @@ class _AdminDashboardState extends State<AdminDashboard>
                   ],
                 ),
     );
+  }
+
+  Color _getRoleColor(String role) {
+    switch (role.toLowerCase()) {
+      case 'student':
+        return AppColors.studentColor;
+      case 'parent':
+        return AppColors.parentColor;
+      case 'admin':
+        return AppColors.adminColor;
+      default:
+        return AppColors.primary;
+    }
   }
 }
 
@@ -278,6 +430,58 @@ class _StatCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ActivityItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String time;
+
+  const _ActivityItem({
+    required this.icon,
+    required this.title,
+    required this.time,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: AppColors.primary, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+                Text(
+                  time,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.grey[600],
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

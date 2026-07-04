@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../app_colors.dart';
 import '../services/parent_service.dart';
 import '../models/career_model.dart';
@@ -27,17 +28,21 @@ class _ParentDashboardState extends State<ParentDashboard> {
   @override
   void initState() {
     super.initState();
+    print('ParentDashboard Init - ID: ${widget.parentId}');
     _parentService = ParentService();
     _loadData();
   }
 
   Future<void> _loadData() async {
     try {
+      print('Loading parent dashboard data...');
       setState(() => _isLoading = true);
 
       if (widget.parentId != null) {
         final recommendations =
             await _parentService.getChildRecommendations(widget.parentId!);
+
+        print('Got ${recommendations.length} recommendations');
 
         setState(() {
           _childRecommendations = recommendations;
@@ -50,11 +55,35 @@ class _ParentDashboardState extends State<ParentDashboard> {
         });
       }
     } catch (e) {
+      print('Error loading parent data: $e');
       setState(() {
         _error = e.toString();
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _handleLogout() async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.go('/');
+            },
+            child: const Text('Logout', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -63,6 +92,12 @@ class _ParentDashboardState extends State<ParentDashboard> {
       appBar: AppBar(
         title: const Text('Parent Portal'),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _handleLogout,
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -71,7 +106,19 @@ class _ParentDashboardState extends State<ParentDashboard> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('Error: $_error'),
+                      Icon(Icons.error_outline,
+                          size: 60, color: AppColors.error),
+                      const SizedBox(height: 16),
+                      const Text('Error Loading Data'),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Text(
+                          _error!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _loadData,
@@ -85,7 +132,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Child Profile Section
+                      // Parent Welcome
                       Card(
                         child: Padding(
                           padding: const EdgeInsets.all(20),
@@ -95,7 +142,8 @@ class _ParentDashboardState extends State<ParentDashboard> {
                                 radius: 30,
                                 backgroundColor:
                                     AppColors.primary.withOpacity(0.2),
-                                child: const Icon(Icons.person, size: 30),
+                                child:
+                                    const Icon(Icons.family_restroom, size: 30),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
@@ -103,7 +151,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Monitoring Child',
+                                      'Welcome, ${widget.parentName ?? "Parent"}!',
                                       style: Theme.of(context)
                                           .textTheme
                                           .titleLarge
@@ -113,7 +161,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'Career progress & achievements',
+                                      'Monitor your child\'s career path',
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodySmall
@@ -123,6 +171,55 @@ class _ParentDashboardState extends State<ParentDashboard> {
                                     ),
                                   ],
                                 ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Child Status Card
+                      Card(
+                        color: AppColors.primary.withOpacity(0.05),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Career Recommendations',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color: Colors.grey[600],
+                                        ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    '${_childRecommendations.length}',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.primary,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: AppColors.primary.withOpacity(0.2),
+                                ),
+                                child: Icon(Icons.trending_up,
+                                    color: AppColors.primary, size: 30),
                               ),
                             ],
                           ),
@@ -140,9 +237,19 @@ class _ParentDashboardState extends State<ParentDashboard> {
                         Center(
                           child: Padding(
                             padding: const EdgeInsets.all(20),
-                            child: Text(
-                              'No recommendations yet.',
-                              style: Theme.of(context).textTheme.bodyMedium,
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  size: 40,
+                                  color: AppColors.primary.withOpacity(0.5),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'No recommendations yet',
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                              ],
                             ),
                           ),
                         )
@@ -191,15 +298,24 @@ class _ParentDashboardState extends State<ParentDashboard> {
                                           ],
                                         ),
                                       ),
-                                      Text(
-                                        '${rec.matchScore.toInt()}%',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleLarge
-                                            ?.copyWith(
-                                              color: AppColors.primary,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary
+                                              .withOpacity(0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                        ),
+                                        child: Text(
+                                          '${rec.matchScore.toInt()}%',
+                                          style: TextStyle(
+                                            color: AppColors.primary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),

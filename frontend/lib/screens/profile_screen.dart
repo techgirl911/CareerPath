@@ -63,13 +63,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
-      // TODO: Call backend to update profile
       print('Updating profile...');
-      print('Name: ${_nameController.text}');
-      print('Email: ${_emailController.text}');
-      print('Phone: ${_phoneController.text}');
-
-      // Simulate API call
       await Future.delayed(const Duration(seconds: 1));
 
       setState(() {
@@ -109,10 +103,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
-      // TODO: Call backend to change password
       print('Changing password...');
-
-      // Simulate API call
       await Future.delayed(const Duration(seconds: 1));
 
       setState(() {
@@ -178,6 +169,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         title: const Text('Profile'),
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -404,29 +399,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ],
-            const SizedBox(height: 32),
-
-            // Account Section
-            Text(
-              'Account',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.delete_outline, color: Colors.red),
-                title: const Text('Delete Account'),
-                subtitle: const Text('Permanently delete your account'),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Feature coming soon!'),
-                    ),
-                  );
-                },
-              ),
-            ),
             const SizedBox(height: 32),
           ],
         ),

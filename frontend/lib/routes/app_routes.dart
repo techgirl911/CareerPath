@@ -21,12 +21,16 @@ class AppRoutes {
 
   static final GoRouter router = GoRouter(
     initialLocation: '/',
+    debugLogDiagnostics: true,
     routes: [
+      // Role Selection
       GoRoute(
         path: '/',
         name: 'roleSelection',
         builder: (context, state) => const RoleSelectionScreen(),
       ),
+
+      // Login
       GoRoute(
         path: '/login',
         name: 'login',
@@ -35,6 +39,8 @@ class AppRoutes {
           return LoginScreen(userRole: role);
         },
       ),
+
+      // Signup
       GoRoute(
         path: '/signup',
         name: 'signup',
@@ -43,13 +49,15 @@ class AppRoutes {
           return SignupScreen(userRole: role);
         },
       ),
-      // Student Dashboard Routes
+
+      // Student Dashboard with nested routes
       GoRoute(
         path: '/student-dashboard',
         name: 'studentDashboard',
         builder: (context, state) {
           final userName = state.extra as String? ?? 'Student';
           final studentId = state.uri.queryParameters['studentId'];
+          print('Student Dashboard Route - ID: $studentId, Name: $userName');
           return StudentDashboard(
             userName: userName,
             studentId: studentId,
@@ -61,6 +69,7 @@ class AppRoutes {
             name: 'studentAcademic',
             builder: (context, state) {
               final studentId = state.uri.queryParameters['studentId'];
+              print('Academic Route - ID: $studentId');
               return AcademicScreen(studentId: studentId);
             },
           ),
@@ -70,6 +79,7 @@ class AppRoutes {
             builder: (context, state) {
               final extra = state.extra as Map<String, dynamic>?;
               final studentId = state.uri.queryParameters['studentId'];
+              print('Profile Route - ID: $studentId');
               return ProfileScreen(
                 userName: extra?['userName'],
                 userEmail: extra?['userEmail'],
@@ -79,6 +89,7 @@ class AppRoutes {
           ),
         ],
       ),
+
       // Parent Dashboard
       GoRoute(
         path: '/parent-dashboard',
@@ -86,12 +97,14 @@ class AppRoutes {
         builder: (context, state) {
           final parentName = state.extra as String? ?? 'Parent';
           final parentId = state.uri.queryParameters['parentId'];
+          print('Parent Dashboard Route - ID: $parentId, Name: $parentName');
           return ParentDashboard(
             parentId: parentId,
             parentName: parentName,
           );
         },
       ),
+
       // Admin Dashboard
       GoRoute(
         path: '/admin-dashboard',
@@ -99,6 +112,7 @@ class AppRoutes {
         builder: (context, state) {
           final adminName = state.extra as String? ?? 'Admin';
           final adminId = state.uri.queryParameters['adminId'];
+          print('Admin Dashboard Route - ID: $adminId, Name: $adminName');
           return AdminDashboard(
             adminId: adminId,
             adminName: adminName,
@@ -107,13 +121,19 @@ class AppRoutes {
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
-      appBar: AppBar(title: const Text('Error')),
+      appBar: AppBar(
+        title: const Text('Error'),
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Page not found: ${state.uri}'),
+            const Icon(Icons.error_outline, size: 60),
             const SizedBox(height: 16),
+            Text('Page not found'),
+            const SizedBox(height: 8),
+            Text('Route: ${state.uri}', style: const TextStyle(fontSize: 12)),
+            const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () => context.go('/'),
               child: const Text('Go Home'),

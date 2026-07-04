@@ -24,8 +24,7 @@ class _AcademicScreenState extends State<AcademicScreen> {
   @override
   void initState() {
     super.initState();
-    print('=== AcademicScreen Init ===');
-    print('studentId: ${widget.studentId}');
+    print('AcademicScreen Init - studentId: ${widget.studentId}');
     _studentService = StudentService();
     _loadAcademicData();
   }
@@ -36,15 +35,14 @@ class _AcademicScreenState extends State<AcademicScreen> {
       setState(() => _isLoading = true);
 
       if (widget.studentId == null || widget.studentId!.isEmpty) {
-        print('ERROR: Student ID is null/empty');
+        print('Student ID is null or empty');
         setState(() {
           _isLoading = false;
-          _error = 'No student ID provided';
+          _error = 'Student ID not found';
         });
         return;
       }
 
-      print('Calling getAcademicResults...');
       final results =
           await _studentService.getAcademicResults(widget.studentId!);
 
@@ -53,10 +51,9 @@ class _AcademicScreenState extends State<AcademicScreen> {
       setState(() {
         _academicResults = results;
         _isLoading = false;
-        _error = null;
       });
     } catch (e) {
-      print('ERROR: $e');
+      print('Error loading academic data: $e');
       setState(() {
         _error = e.toString();
         _isLoading = false;
@@ -77,18 +74,13 @@ class _AcademicScreenState extends State<AcademicScreen> {
       appBar: AppBar(
         title: const Text('Academic Results'),
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: _isLoading
-          ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Loading academic data...'),
-                ],
-              ),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(
                   child: Column(
@@ -97,7 +89,7 @@ class _AcademicScreenState extends State<AcademicScreen> {
                       Icon(Icons.error_outline,
                           size: 60, color: AppColors.error),
                       const SizedBox(height: 16),
-                      const Text('Error Loading Data'),
+                      const Text('Error'),
                       const SizedBox(height: 8),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -128,7 +120,7 @@ class _AcademicScreenState extends State<AcademicScreen> {
                           const SizedBox(height: 16),
                           const Text('No Academic Results'),
                           const SizedBox(height: 8),
-                          const Text('Upload your results to get started'),
+                          const Text('Upload results to get started'),
                         ],
                       ),
                     )
