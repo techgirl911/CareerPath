@@ -43,6 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       print('========== LOGIN START ==========');
       print('Email: ${_emailController.text.trim()}');
+      print('Password: ****');
 
       final user = await _authService.login(
         email: _emailController.text.trim(),
@@ -50,50 +51,68 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       print('========== LOGIN SUCCESS ==========');
-      print('User: ${user.fullName}');
-      print('Role: ${user.role}');
-      print('ID: ${user.id}');
+      print('User Full Name: ${user.fullName}');
+      print('User Email: ${user.email}');
+      print('User Role: ${user.role}');
+      print('User ID: ${user.id}');
+      print('=================================');
 
       if (!mounted) return;
 
+      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Welcome ${user.fullName}!'),
           backgroundColor: AppColors.success,
+          duration: const Duration(seconds: 2),
         ),
       );
 
-      Future.delayed(const Duration(milliseconds: 500), () {
+      // Wait then navigate
+      Future.delayed(const Duration(milliseconds: 800), () {
         if (mounted) {
-          print('========== NAVIGATING ==========');
-          print('Role: ${user.role}');
+          print('========== NAVIGATION START ==========');
+          print('User Role: ${user.role}');
+          print('User ID: ${user.id}');
+          print('User Full Name: ${user.fullName}');
+          print('User Email: ${user.email}');
 
+          // Encode parameters to handle special characters
           final encodedName = Uri.encodeComponent(user.fullName);
           final encodedEmail = Uri.encodeComponent(user.email);
 
+          print('Encoded Name: $encodedName');
+          print('Encoded Email: $encodedEmail');
+
           if (user.role == 'student') {
-            print('Going to student dashboard with ID: ${user.id}');
-            context.go(
-              '/student-dashboard?studentId=${user.id}&userName=$encodedName&userEmail=$encodedEmail',
-            );
+            final route =
+                '/student-dashboard?studentId=${user.id}&userName=$encodedName&userEmail=$encodedEmail';
+            print('Navigating to Student Dashboard');
+            print('Route: $route');
+            context.go(route);
           } else if (user.role == 'parent') {
-            print('Going to parent dashboard with ID: ${user.id}');
-            context.go(
-              '/parent-dashboard?parentId=${user.id}&parentName=$encodedName',
-            );
+            final route =
+                '/parent-dashboard?parentId=${user.id}&parentName=$encodedName';
+            print('Navigating to Parent Dashboard');
+            print('Route: $route');
+            context.go(route);
           } else if (user.role == 'admin') {
-            print('Going to admin dashboard with ID: ${user.id}');
-            context.go(
-              '/admin-dashboard?adminId=${user.id}&adminName=$encodedName',
-            );
+            final route =
+                '/admin-dashboard?adminId=${user.id}&adminName=$encodedName';
+            print('Navigating to Admin Dashboard');
+            print('Route: $route');
+            context.go(route);
           } else {
-            print('Unknown role: ${user.role}');
+            print('ERROR: Unknown role: ${user.role}');
           }
+          print('========== NAVIGATION END ==========');
         }
       });
     } catch (e) {
       print('========== LOGIN ERROR ==========');
-      print('Error: $e');
+      print('Error Type: ${e.runtimeType}');
+      print('Error Message: $e');
+      print('================================');
 
       setState(() {
         _errorMessage = e.toString();
@@ -103,6 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
         SnackBar(
           content: Text('Login failed: $e'),
           backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 3),
         ),
       );
     } finally {
@@ -118,6 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         title: const Text('Sign In'),
         elevation: 0,
+        centerTitle: false,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -127,6 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Header
                 Text(
                   'Welcome Back',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -146,6 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 if (_errorMessage != null)
                   Container(
                     padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 24),
                     decoration: BoxDecoration(
                       color: AppColors.error.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -153,18 +176,24 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.error_outline, color: AppColors.error),
+                        Icon(
+                          Icons.error_outline,
+                          color: AppColors.error,
+                          size: 20,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             _errorMessage!,
-                            style: TextStyle(color: AppColors.error),
+                            style: TextStyle(
+                              color: AppColors.error,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                const SizedBox(height: 24),
 
                 // Email Field
                 TextFormField(
@@ -177,13 +206,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                   validator: (value) {
                     if (value?.isEmpty ?? true) {
                       return 'Email is required';
                     }
                     if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value!)) {
-                      return 'Enter a valid email';
+                      return 'Enter a valid email address';
                     }
                     return null;
                   },
@@ -196,7 +229,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     labelText: 'Password',
-                    hintText: 'password123',
+                    hintText: 'Enter your password',
                     prefixIcon: const Icon(Icons.lock_outlined),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -211,13 +244,37 @@ class _LoginScreenState extends State<LoginScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                   validator: (value) {
                     if (value?.isEmpty ?? true) {
                       return 'Password is required';
                     }
+                    if (value!.length < 6) {
+                      return 'Password must be at least 6 characters';
+                    }
                     return null;
                   },
+                ),
+                const SizedBox(height: 8),
+
+                // Forgot Password Link
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Password reset coming soon!'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    child: const Text('Forgot Password?'),
+                  ),
                 ),
                 const SizedBox(height: 32),
 
@@ -239,7 +296,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           )
                         : const Text(
                             'Sign In',
-                            style: TextStyle(fontSize: 16),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                   ),
                 ),
@@ -255,24 +315,58 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     TextButton(
                       onPressed: () {
-                        context.push(
-                          '/signup?role=${widget.userRole}',
-                        );
+                        print(
+                            'Navigating to signup with role: ${widget.userRole}');
+                        context.push('/signup?role=${widget.userRole}');
                       },
-                      child: const Text('Sign Up'),
+                      child: const Text(
+                        'Sign Up',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 16),
 
                 // Back Button
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                      print('Going back to role selection');
+                      Navigator.pop(context);
+                    },
                     icon: const Icon(Icons.arrow_back),
-                    label: const Text('Back'),
+                    label: const Text('Back to Role Selection'),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Demo Credentials Info
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(8),
+                    border:
+                        Border.all(color: AppColors.primary.withOpacity(0.2)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Demo Credentials',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Email: student@example.com\nPassword: password123',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ],
                   ),
                 ),
               ],
