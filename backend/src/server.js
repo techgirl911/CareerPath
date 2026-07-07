@@ -1,57 +1,42 @@
-const express = require('express');
-const cors = require('cors');
+// MUST be at the very top!
 require('dotenv').config();
 
+const express = require('express');
+const cors = require('cors');
+const db = require('./models');
+
+console.log('========== ENV VARIABLES ==========');
+console.log('DB_HOST:', process.env.DB_HOST);
+console.log('DB_USER:', process.env.DB_USER);
+console.log('DB_PASSWORD:', process.env.DB_PASSWORD ? '***' : 'EMPTY');
+console.log('DB_NAME:', process.env.DB_NAME);
+console.log('===================================');
+
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Database connection test
-const pool = require('./config/database');
-
-// Basic route
-app.get('/api/health', (req, res) => {
-  res.json({ message: 'Server is running!' });
-});
-
 // Routes
-const authRoutes = require('./routes/auth');
-app.use('/api/auth', authRoutes);
-
-const studentRoutes = require('./routes/student');
-app.use('/api/students', studentRoutes);
-
-const careerRoutes = require('./routes/career');
-app.use('/api/careers', careerRoutes);
-
-const quizRoutes = require('./routes/quiz');
-app.use('/api/quizzes', quizRoutes);
-
-const parentRoutes = require('./routes/parent');
-app.use('/api/parents', parentRoutes);
-
-const adminRoutes = require('./routes/admin');
-app.use('/api/admin', adminRoutes);
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/students', require('./routes/student'));
+app.use('/api/parents', require('./routes/parent'));
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/careers', require('./routes/career'));
+app.use('/api/quizzes', require('./routes/quiz'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Internal server error' });
-});
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
+  console.error('Error:', err.message);
+  res.status(err.statusCode || 500).json({
+    message: err.message || 'Internal Server Error',
+  });
 });
 
 // Start server
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
-
-module.exports = app;

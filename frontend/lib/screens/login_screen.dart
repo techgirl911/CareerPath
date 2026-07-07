@@ -19,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+
   bool _obscurePassword = true;
   bool _isLoading = false;
   String? _errorMessage;
@@ -43,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       print('========== LOGIN START ==========');
       print('Email: ${_emailController.text.trim()}');
-      print('Password: ****');
+      print('Expected Role (from selection): ${widget.userRole}');
 
       final user = await _authService.login(
         email: _emailController.text.trim(),
@@ -53,13 +54,11 @@ class _LoginScreenState extends State<LoginScreen> {
       print('========== LOGIN SUCCESS ==========');
       print('User Full Name: ${user.fullName}');
       print('User Email: ${user.email}');
-      print('User Role: ${user.role}');
+      print('User Role (from backend): ${user.role}');
       print('User ID: ${user.id}');
-      print('=================================');
 
       if (!mounted) return;
 
-      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Welcome ${user.fullName}!'),
@@ -68,51 +67,49 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
 
-      // Wait then navigate
       Future.delayed(const Duration(milliseconds: 800), () {
         if (mounted) {
-          print('========== NAVIGATION START ==========');
-          print('User Role: ${user.role}');
-          print('User ID: ${user.id}');
-          print('User Full Name: ${user.fullName}');
-          print('User Email: ${user.email}');
+          print('========== NAVIGATION DECISION ==========');
+          print('User Role from backend: ${user.role}');
+          print('Selected role at login: ${widget.userRole}');
 
-          // Encode parameters to handle special characters
           final encodedName = Uri.encodeComponent(user.fullName);
           final encodedEmail = Uri.encodeComponent(user.email);
 
-          print('Encoded Name: $encodedName');
-          print('Encoded Email: $encodedEmail');
-
+          // Use role from backend response
           if (user.role == 'student') {
+            print('Navigating to STUDENT dashboard');
             final route =
                 '/student-dashboard?studentId=${user.id}&userName=$encodedName&userEmail=$encodedEmail';
-            print('Navigating to Student Dashboard');
             print('Route: $route');
             context.go(route);
           } else if (user.role == 'parent') {
+            print('Navigating to PARENT dashboard');
             final route =
                 '/parent-dashboard?parentId=${user.id}&parentName=$encodedName';
-            print('Navigating to Parent Dashboard');
             print('Route: $route');
             context.go(route);
           } else if (user.role == 'admin') {
+            print('Navigating to ADMIN dashboard');
             final route =
                 '/admin-dashboard?adminId=${user.id}&adminName=$encodedName';
-            print('Navigating to Admin Dashboard');
             print('Route: $route');
             context.go(route);
           } else {
             print('ERROR: Unknown role: ${user.role}');
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Error: Unknown user role'),
+                backgroundColor: Color(0xFFEF4444),
+              ),
+            );
           }
-          print('========== NAVIGATION END ==========');
         }
       });
     } catch (e) {
       print('========== LOGIN ERROR ==========');
       print('Error Type: ${e.runtimeType}');
       print('Error Message: $e');
-      print('================================');
 
       setState(() {
         _errorMessage = e.toString();
@@ -176,11 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.error_outline,
-                          color: AppColors.error,
-                          size: 20,
-                        ),
+                        Icon(Icons.error_outline, color: AppColors.error),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -290,8 +283,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: 24,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation(Colors.white),
                             ),
                           )
                         : const Text(
@@ -362,10 +354,38 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Email: student@example.com\nPassword: password123',
-                        style: TextStyle(fontSize: 12),
-                      ),
+                      if (widget.userRole == 'student') ...[
+                        const Text(
+                          'Email: student@example.com',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        const Text(
+                          'Password: password123',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ] else if (widget.userRole == 'parent') ...[
+                        const Text(
+                          'Email: parent@example.com',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        const Text(
+                          'Password: password123',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ] else ...[
+                        const Text(
+                          'Email: admin@example.com',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        const Text(
+                          'Password: password123',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        const Text(
+                          'Admin Code: ADMIN2024',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ],
                     ],
                   ),
                 ),

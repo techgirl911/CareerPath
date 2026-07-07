@@ -63,6 +63,9 @@ class _SignupScreenState extends State<SignupScreen> {
       print('Full Name: ${_fullNameController.text}');
       print('Email: ${_emailController.text}');
       print('Role: ${widget.userRole}');
+      if (widget.userRole == 'admin') {
+        print('Admin Code: ${_adminCodeController.text}');
+      }
 
       final user = await _authService.signup(
         fullName: _fullNameController.text,
@@ -74,21 +77,21 @@ class _SignupScreenState extends State<SignupScreen> {
       );
 
       print('========== SIGNUP SUCCESS ==========');
-      print('User: ${user.fullName}');
+      print('User created: ${user.fullName}');
       print('Role: ${user.role}');
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Account created! Please sign in.'),
-          backgroundColor: AppColors.success,
+          backgroundColor: Color(0xFF10B981),
         ),
       );
 
       Future.delayed(const Duration(milliseconds: 800), () {
         if (mounted) {
-          print('Going to login screen');
+          print('Going to login screen for role: ${widget.userRole}');
           context.go('/login?role=${widget.userRole}');
         }
       });
@@ -159,7 +162,10 @@ class _SignupScreenState extends State<SignupScreen> {
                         Expanded(
                           child: Text(
                             _errorMessage!,
-                            style: TextStyle(color: AppColors.error),
+                            style: TextStyle(
+                              color: AppColors.error,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ],
@@ -175,6 +181,10 @@ class _SignupScreenState extends State<SignupScreen> {
                     prefixIcon: const Icon(Icons.person_outline),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
                   ),
                   validator: (value) {
@@ -196,6 +206,10 @@ class _SignupScreenState extends State<SignupScreen> {
                     prefixIcon: const Icon(Icons.email_outlined),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
                   ),
                   validator: (value) {
@@ -231,6 +245,10 @@ class _SignupScreenState extends State<SignupScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                   validator: (value) {
                     if (value?.isEmpty ?? true) {
@@ -265,6 +283,10 @@ class _SignupScreenState extends State<SignupScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                   validator: (value) {
                     if (value?.isEmpty ?? true) {
@@ -288,6 +310,10 @@ class _SignupScreenState extends State<SignupScreen> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                         ),
                         validator: (value) {
                           if (value?.isEmpty ?? true) {
@@ -295,6 +321,13 @@ class _SignupScreenState extends State<SignupScreen> {
                           }
                           return null;
                         },
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Contact system administrator for admin code',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.grey[600],
+                            ),
                       ),
                       const SizedBox(height: 16),
                     ],

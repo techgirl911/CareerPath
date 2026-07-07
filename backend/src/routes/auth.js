@@ -1,18 +1,51 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
-const authMiddleware = require('../middleware/authMiddleware');
 
-// POST /api/auth/signup
-router.post('/signup', authController.signup);
+console.log('========== AUTH ROUTES LOADED ==========');
 
-// POST /api/auth/login
-router.post('/login', authController.login);
+// Signup route
+router.post('/signup', async (req, res, next) => {
+  try {
+    console.log('POST /signup - Body:', req.body);
+    await authController.signup(req, res);
+  } catch (error) {
+    console.error('Signup route error:', error);
+    next(error);
+  }
+});
 
-// POST /api/auth/logout
-router.post('/logout', authController.logout);
+// Login route
+router.post('/login', async (req, res, next) => {
+  try {
+    console.log('POST /login - Body:', req.body);
+    await authController.login(req, res);
+  } catch (error) {
+    console.error('Login route error:', error);
+    next(error);
+  }
+});
 
-// GET /api/auth/me (protected)
-router.get('/me', authMiddleware, authController.getCurrentUser);
+// Get current user route
+router.get('/me', async (req, res, next) => {
+  try {
+    console.log('GET /me');
+    await authController.getCurrentUser(req, res);
+  } catch (error) {
+    console.error('Get user route error:', error);
+    next(error);
+  }
+});
+
+// Logout route
+router.post('/logout', async (req, res, next) => {
+  try {
+    console.log('POST /logout');
+    await authController.logout(req, res);
+  } catch (error) {
+    console.error('Logout route error:', error);
+    next(error);
+  }
+});
 
 module.exports = router;
