@@ -26,9 +26,9 @@ class ApiEndpoints {
   static String getAcademicProfile(String studentId) =>
       '$base/students/$studentId/academic-profile';
   static String getAcademicResults(String studentId) =>
-      '$base/students/$studentId/academic-results';
+      '$base/students/$studentId/academic-profile';
   static String getRecommendations(String studentId) =>
-      '$base/students/$studentId/career-recommendations';
+      '$base/students/$studentId/recommendations';
 
   // Career endpoints
   static const String getAllCareers = '$base/careers';
@@ -50,7 +50,7 @@ class ApiEndpoints {
   static String getParentDashboard(String parentId) =>
       '$base/parents/$parentId/dashboard';
   static String getChildRecommendations(String parentId) =>
-      '$base/parents/$parentId/child-recommendations';
+      '$base/parents/$parentId/child/recommendations';
   static String getChildAcademic(String parentId) =>
       '$base/parents/$parentId/child-academic';
 

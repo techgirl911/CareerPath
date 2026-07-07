@@ -12,6 +12,9 @@ router.get('/:parentId/dashboard', parentController.getParentDashboard);
 // GET /api/parents/:parentId/child/recommendations
 router.get('/:parentId/child/recommendations', parentController.getChildRecommendations);
 
+// Backward-compatible alias for older clients
+router.get('/:parentId/child-recommendations', parentController.getChildRecommendations);
+
 // GET /api/parents/:parentId/child/academic
 router.get('/:parentId/child/academic', parentController.getChildAcademic);
 

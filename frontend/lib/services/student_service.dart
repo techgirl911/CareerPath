@@ -75,9 +75,20 @@ class StudentService {
     try {
       final response =
           await _dio.get(ApiEndpoints.getAcademicResults(studentId));
-      return (response.data as List)
-          .map((item) => AcademicResult.fromJson(item))
-          .toList();
+
+      final data = response.data;
+      if (data is List) {
+        return data.map((item) => AcademicResult.fromJson(item)).toList();
+      }
+
+      if (data is Map<String, dynamic>) {
+        final results = data['results'];
+        if (results is List) {
+          return results.map((item) => AcademicResult.fromJson(item)).toList();
+        }
+      }
+
+      return [];
     } on DioException catch (e) {
       throw _handleError(e);
     }

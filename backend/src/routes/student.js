@@ -12,7 +12,13 @@ router.get('/:studentId/dashboard', studentController.getStudentDashboard);
 // GET /api/students/:studentId/academic-profile
 router.get('/:studentId/academic-profile', studentController.getAcademicProfile);
 
+// Backward-compatible alias for older clients
+router.get('/:studentId/academic-results', studentController.getAcademicProfile);
+
 // GET /api/students/:studentId/recommendations
 router.get('/:studentId/recommendations', studentController.getCareerRecommendations);
+
+// Backward-compatible alias for older clients
+router.get('/:studentId/career-recommendations', studentController.getCareerRecommendations);
 
 module.exports = router;
