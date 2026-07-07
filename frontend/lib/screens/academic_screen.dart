@@ -1,4 +1,6 @@
+// ignore_for_file: avoid_print
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../app_colors.dart';
 import '../services/student_service.dart';
 import '../models/academic_model.dart';
@@ -7,9 +9,9 @@ class AcademicScreen extends StatefulWidget {
   final String? studentId;
 
   const AcademicScreen({
+    super.key,
     this.studentId,
-    Key? key,
-  }) : super(key: key);
+  });
 
   @override
   State<AcademicScreen> createState() => _AcademicScreenState();
@@ -76,7 +78,15 @@ class _AcademicScreenState extends State<AcademicScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            final navigator = Navigator.of(context);
+            if (navigator.canPop()) {
+              navigator.pop();
+            } else {
+              context
+                  .go('/student-dashboard?studentId=${widget.studentId ?? ""}');
+            }
+          },
         ),
       ),
       body: _isLoading
@@ -115,7 +125,7 @@ class _AcademicScreenState extends State<AcademicScreen> {
                           Icon(
                             Icons.school_outlined,
                             size: 60,
-                            color: AppColors.primary.withOpacity(0.5),
+                            color: AppColors.primary.withValues(alpha: 0.5),
                           ),
                           const SizedBox(height: 16),
                           const Text('No Academic Results'),
@@ -168,7 +178,8 @@ class _AcademicScreenState extends State<AcademicScreen> {
                                     height: 80,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: AppColors.primary.withOpacity(0.1),
+                                      color: AppColors.primary
+                                          .withValues(alpha: 0.1),
                                     ),
                                     child: Center(
                                       child: Text(
@@ -195,10 +206,9 @@ class _AcademicScreenState extends State<AcademicScreen> {
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                           const SizedBox(height: 16),
-                          ..._academicResults
-                              .map((result) =>
-                                  _SubjectResultCard(result: result))
-                              .toList(),
+                          ..._academicResults.map(
+                            (result) => _SubjectResultCard(result: result),
+                          ),
                           const SizedBox(height: 32),
                         ],
                       ),
@@ -246,7 +256,7 @@ class _SubjectResultCard extends StatelessWidget {
                 height: 60,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _getGradeColor(result.grade).withOpacity(0.2),
+                  color: _getGradeColor(result.grade).withValues(alpha: 0.2),
                 ),
                 child: Center(
                   child: Text(

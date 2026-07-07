@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../app_colors.dart';
@@ -9,10 +10,10 @@ class ParentDashboard extends StatefulWidget {
   final String? parentName;
 
   const ParentDashboard({
+    super.key,
     this.parentId,
     this.parentName,
-    Key? key,
-  }) : super(key: key);
+  });
 
   @override
   State<ParentDashboard> createState() => _ParentDashboardState();
@@ -37,7 +38,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
       print('Loading parent data...');
       setState(() => _isLoading = true);
 
-      if (widget.parentId != null) {
+      if (widget.parentId != null && widget.parentId!.isNotEmpty) {
         final recommendations =
             await _parentService.getChildRecommendations(widget.parentId!);
 
@@ -139,7 +140,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
                               CircleAvatar(
                                 radius: 30,
                                 backgroundColor:
-                                    AppColors.primary.withOpacity(0.2),
+                                    AppColors.primary.withValues(alpha: 0.2),
                                 child:
                                     const Icon(Icons.family_restroom, size: 30),
                               ),
@@ -178,7 +179,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
 
                       // Status Card
                       Card(
-                        color: AppColors.primary.withOpacity(0.05),
+                        color: AppColors.primary.withValues(alpha: 0.05),
                         child: Padding(
                           padding: const EdgeInsets.all(16),
                           child: Row(
@@ -214,7 +215,8 @@ class _ParentDashboardState extends State<ParentDashboard> {
                                 height: 60,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: AppColors.primary.withOpacity(0.2),
+                                  color:
+                                      AppColors.primary.withValues(alpha: 0.2),
                                 ),
                                 child: Icon(Icons.trending_up,
                                     color: AppColors.primary, size: 30),
@@ -240,7 +242,8 @@ class _ParentDashboardState extends State<ParentDashboard> {
                                 Icon(
                                   Icons.info_outline,
                                   size: 40,
-                                  color: AppColors.primary.withOpacity(0.5),
+                                  color:
+                                      AppColors.primary.withValues(alpha: 0.5),
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
@@ -264,7 +267,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
                                         height: 50,
                                         decoration: BoxDecoration(
                                           color: AppColors.primary
-                                              .withOpacity(0.1),
+                                              .withValues(alpha: 0.1),
                                           borderRadius:
                                               BorderRadius.circular(12),
                                         ),
@@ -303,7 +306,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
                                         ),
                                         decoration: BoxDecoration(
                                           color: AppColors.primary
-                                              .withOpacity(0.1),
+                                              .withValues(alpha: 0.1),
                                           borderRadius:
                                               BorderRadius.circular(20),
                                         ),

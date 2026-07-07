@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../app_colors.dart';
@@ -9,11 +10,11 @@ class ProfileScreen extends StatefulWidget {
   final String? userId;
 
   const ProfileScreen({
+    super.key,
     this.userName,
     this.userEmail,
     this.userId,
-    Key? key,
-  }) : super(key: key);
+  });
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -66,11 +67,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       print('Updating profile...');
       await Future.delayed(const Duration(seconds: 1));
 
+      if (!mounted) return;
+
       setState(() {
         _successMessage = 'Profile updated successfully!';
         _isEditing = false;
       });
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Profile updated successfully!'),
@@ -106,6 +110,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       print('Changing password...');
       await Future.delayed(const Duration(seconds: 1));
 
+      if (!mounted) return;
+
       setState(() {
         _successMessage = 'Password changed successfully!';
         _showPasswordForm = false;
@@ -114,6 +120,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _confirmPasswordController.clear();
       });
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Password changed successfully!'),
@@ -140,18 +147,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              final messenger = ScaffoldMessenger.maybeOf(context);
+              final navigator = Navigator.of(context);
+              navigator.pop();
               try {
                 final authService = AuthService();
                 await authService.logout();
-                if (mounted) {
+                if (!mounted) return;
+                if (context.mounted) {
                   context.go('/');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Logged out successfully')),
-                  );
                 }
+                if (!mounted || messenger == null) return;
+                messenger.showSnackBar(
+                  const SnackBar(content: Text('Logged out successfully')),
+                );
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                if (!mounted || messenger == null) return;
+                messenger.showSnackBar(
                   SnackBar(content: Text('Error: $e')),
                 );
               }
@@ -171,7 +183,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            final navigator = Navigator.of(context);
+            if (navigator.canPop()) {
+              navigator.pop();
+            } else {
+              context.go('/student-dashboard?studentId=${widget.userId ?? ""}');
+            }
+          },
         ),
         actions: [
           IconButton(
@@ -191,7 +210,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   CircleAvatar(
                     radius: 50,
-                    backgroundColor: AppColors.primary.withOpacity(0.2),
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.2),
                     child: const Icon(Icons.person, size: 50),
                   ),
                   const SizedBox(height: 16),
@@ -218,7 +237,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.error.withOpacity(0.1),
+                  color: AppColors.error.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -230,7 +249,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.1),
+                  color: AppColors.success.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(

@@ -1,4 +1,5 @@
 // ignore_for_file: unused_import
+// ignore_for_file: avoid_print
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -15,11 +16,11 @@ class StudentDashboard extends StatefulWidget {
   final String? studentId;
 
   const StudentDashboard({
+    super.key,
     this.userName,
     this.userEmail,
     this.studentId,
-    Key? key,
-  }) : super(key: key);
+  });
 
   @override
   State<StudentDashboard> createState() => _StudentDashboardState();
@@ -260,7 +261,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                                         height: 50,
                                         decoration: BoxDecoration(
                                           color: AppColors.primary
-                                              .withOpacity(0.1),
+                                              .withValues(alpha: 0.1),
                                           borderRadius:
                                               BorderRadius.circular(12),
                                         ),
@@ -340,7 +341,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                                 ),
                               ),
                             ).then((quiz) {
-                              if (quiz != null) {
+                              if (quiz != null && mounted && context.mounted) {
                                 context.go(
                                   '/quiz?quizId=${quiz.id}&studentId=${widget.studentId}',
                                 );
@@ -377,7 +378,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
             // Home
           } else if (index == 1) {
             // Academic
-            context.go('/academic?studentId=${widget.studentId}');
+            context.push('/academic?studentId=${widget.studentId}');
           } else if (index == 2) {
             // Profile
             final encodedName = Uri.encodeComponent(widget.userName ?? 'User');
