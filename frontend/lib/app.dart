@@ -7,13 +7,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print('Building MyApp');
+
     return MaterialApp.router(
       title: 'CareerPath',
+      debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
-      routerConfig: AppRoutes.router,
-      debugShowCheckedModeBanner: false,
+      themeMode: ThemeMode.light,
+      routerConfig: router,
     );
   }
 }

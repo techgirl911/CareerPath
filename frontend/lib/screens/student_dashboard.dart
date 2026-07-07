@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../app_colors.dart';
-import '../widgets/career_demand_chart.dart';
 import '../services/student_service.dart';
+import '../models/quiz_model.dart';
 import '../models/career_model.dart';
+import '../widgets/career_demand_chart.dart';
+import '../screens/quiz_list_screen.dart';
 
 class StudentDashboard extends StatefulWidget {
   final String? userName;
@@ -30,9 +32,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
   @override
   void initState() {
     super.initState();
-    print('StudentDashboard Init');
+    print('StudentDashboard loaded');
     print('StudentID: ${widget.studentId}');
-    print('UserName: ${widget.userName}');
     _studentService = StudentService();
     _loadData();
   }
@@ -41,9 +42,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
     try {
       setState(() => _isLoading = true);
 
-      if (widget.studentId != null) {
+      if (widget.studentId != null && widget.studentId!.isNotEmpty) {
         final recommendations =
             await _studentService.getCareerRecommendations(widget.studentId!);
+
+        print('Got ${recommendations.length} recommendations');
 
         setState(() {
           _recommendations = recommendations;
@@ -110,7 +113,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                       Icon(Icons.error_outline,
                           size: 60, color: AppColors.error),
                       const SizedBox(height: 16),
-                      Text('Error: $_error'),
+                      const Text('Error Loading Data'),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _loadData,
@@ -124,7 +127,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Welcome Section
+                      // Welcome Card
                       Card(
                         child: Padding(
                           padding: const EdgeInsets.all(20),
@@ -133,18 +136,17 @@ class _StudentDashboardState extends State<StudentDashboard> {
                             children: [
                               Text(
                                 'Welcome, ${widget.userName ?? "Student"}!',
-                                style:
-                                    Theme.of(context).textTheme.headlineSmall,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleLarge
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 'Continue your career exploration journey',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      color: Colors.grey[600],
-                                    ),
+                                style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ],
                           ),
@@ -169,12 +171,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
                                   children: [
                                     Text(
                                       'Top Match',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            color: Colors.grey[600],
-                                          ),
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
@@ -185,8 +183,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
                                           .textTheme
                                           .titleLarge
                                           ?.copyWith(
-                                            fontWeight: FontWeight.bold,
                                             color: AppColors.primary,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -206,12 +204,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
                                   children: [
                                     Text(
                                       'Your GPA',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            color: Colors.grey[600],
-                                          ),
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
@@ -220,8 +214,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
                                           .textTheme
                                           .titleLarge
                                           ?.copyWith(
-                                            fontWeight: FontWeight.bold,
                                             color: AppColors.success,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                     ),
                                   ],
@@ -233,19 +227,21 @@ class _StudentDashboardState extends State<StudentDashboard> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Recommendations
+                      // Career Recommendations
                       Text(
                         'Career Recommendations',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 12),
                       if (_recommendations.isEmpty)
-                        Center(
+                        Card(
                           child: Padding(
                             padding: const EdgeInsets.all(20),
-                            child: Text(
-                              'No recommendations yet',
-                              style: Theme.of(context).textTheme.bodyMedium,
+                            child: Center(
+                              child: Text(
+                                'No recommendations yet',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
                             ),
                           ),
                         )
@@ -286,10 +282,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                                               'Match: ${rec.matchScore.toInt()}%',
                                               style: Theme.of(context)
                                                   .textTheme
-                                                  .bodySmall
-                                                  ?.copyWith(
-                                                    color: Colors.grey[600],
-                                                  ),
+                                                  .bodySmall,
                                             ),
                                           ],
                                         ),
@@ -301,17 +294,72 @@ class _StudentDashboardState extends State<StudentDashboard> {
                             )),
                       const SizedBox(height: 24),
 
-                      // Chart
+                      // Demand Chart
                       if (_recommendations.isNotEmpty)
-                        CareerDemandChart(
-                          careerData: _recommendations
-                              .map((rec) => CareerDemandData(
-                                    careerName: rec.career.title,
-                                    demandLevel:
-                                        rec.matchScore.toInt().clamp(0, 100),
-                                  ))
-                              .toList(),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Market Demand',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 12),
+                            CareerDemandChart(
+                              careerData: _recommendations
+                                  .map((rec) => CareerDemandData(
+                                        careerName: rec.career.title,
+                                        demandLevel: rec.matchScore
+                                            .toInt()
+                                            .clamp(0, 100),
+                                      ))
+                                  .toList(),
+                            ),
+                            const SizedBox(height: 24),
+                          ],
                         ),
+
+                      // Quick Actions
+                      Text(
+                        'Quick Actions',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.quiz),
+                          label: const Text('Take a Quiz'),
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => Dialog(
+                                child: QuizListScreen(
+                                  studentId: widget.studentId,
+                                ),
+                              ),
+                            ).then((quiz) {
+                              if (quiz != null) {
+                                context.go(
+                                  '/quiz?quizId=${quiz.id}&studentId=${widget.studentId}',
+                                );
+                              }
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.upload_file),
+                          label: const Text('Upload Results'),
+                          onPressed: () {
+                            context.go(
+                              '/upload?studentId=${widget.studentId}',
+                            );
+                          },
+                        ),
+                      ),
                       const SizedBox(height: 32),
                     ],
                   ),
@@ -323,29 +371,18 @@ class _StudentDashboardState extends State<StudentDashboard> {
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
         onTap: (index) {
-          print('Bottom nav tapped: $index');
-
-          final encodedName = Uri.encodeComponent(widget.userName ?? 'User');
-          final encodedEmail = Uri.encodeComponent(widget.userEmail ?? '');
-
           if (index == 0) {
-            // Home - stay here
-            print('Home selected - staying on dashboard');
+            // Home
           } else if (index == 1) {
             // Academic
-            print(
-                'Academic selected - navigating with studentId: ${widget.studentId}');
-            final route = '/academic?studentId=${widget.studentId}';
-            print('Route: $route');
-            context.go(route);
+            context.go('/academic?studentId=${widget.studentId}');
           } else if (index == 2) {
             // Profile
-            print(
-                'Profile selected - navigating with studentId: ${widget.studentId}');
-            final route =
-                '/profile?studentId=${widget.studentId}&userName=$encodedName&userEmail=$encodedEmail';
-            print('Route: $route');
-            context.go(route);
+            final encodedName = Uri.encodeComponent(widget.userName ?? 'User');
+            final encodedEmail = Uri.encodeComponent(widget.userEmail ?? '');
+            context.go(
+              '/profile?studentId=${widget.studentId}&userName=$encodedName&userEmail=$encodedEmail',
+            );
           }
         },
       ),

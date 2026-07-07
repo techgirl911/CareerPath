@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../routes/app_routes.dart';
 import '../app_colors.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
@@ -51,7 +50,7 @@ class RoleSelectionScreen extends StatelessWidget {
                 description: 'Discover careers & take quizzes',
                 color: AppColors.studentColor,
                 onTap: () {
-                  context.push('${AppRoutes.login}?role=student');
+                  context.go('/login?role=student');
                 },
               ),
               const SizedBox(height: 16),
@@ -61,7 +60,7 @@ class RoleSelectionScreen extends StatelessWidget {
                 description: 'Track your child\'s progress',
                 color: AppColors.parentColor,
                 onTap: () {
-                  context.push('${AppRoutes.login}?role=parent');
+                  context.go('/login?role=parent');
                 },
               ),
               const SizedBox(height: 16),
@@ -71,7 +70,7 @@ class RoleSelectionScreen extends StatelessWidget {
                 description: 'Manage platform content',
                 color: AppColors.adminColor,
                 onTap: () {
-                  context.push('${AppRoutes.login}?role=admin');
+                  context.go('/login?role=admin');
                 },
               ),
             ],
