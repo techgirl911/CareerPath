@@ -18,19 +18,32 @@ module.exports = (sequelize, DataTypes) => {
           key: 'id',
         },
       },
+      childId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: {
+          model: 'Students',
+          key: 'id',
+        },
+      },
+      relationship: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       childrenCount: {
         type: DataTypes.INTEGER,
-        defaultValue: 1,
+        defaultValue: 0,
       },
     },
     {
-      tableName: 'Parents',
+      tableName: 'parents',
       timestamps: true,
     }
   );
 
   Parent.associate = (models) => {
     Parent.belongsTo(models.User, { foreignKey: 'userId' });
+    Parent.belongsTo(models.Student, { foreignKey: 'childId' });
   };
 
   return Parent;

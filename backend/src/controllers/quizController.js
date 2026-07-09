@@ -1,4 +1,4 @@
-const pool = require('../config/database');
+const pool = require('../config/dbPool');
 const { v4: uuidv4 } = require('uuid');
 
 // Get all quizzes
@@ -13,11 +13,18 @@ exports.getAllQuizzes = async (req, res) => {
       [parseInt(limit), offset]
     );
 
+    const parsedQuizzes = quizzes.map((quiz) => ({
+      ...quiz,
+      questions: typeof quiz.questions === 'string'
+        ? JSON.parse(quiz.questions)
+        : quiz.questions || []
+    }));
+
     const [countResult] = await pool.query('SELECT COUNT(*) as count FROM quizzes');
     const total = countResult[0].count;
 
     res.status(200).json({
-      data: quizzes,
+      data: parsedQuizzes,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -44,18 +51,12 @@ exports.getQuizById = async (req, res) => {
       return res.status(404).json({ message: 'Quiz not found' });
     }
 
-    // Get quiz questions
-    const [questions] = await pool.query(
-      'SELECT * FROM quiz_questions WHERE quizId = ? ORDER BY questionOrder',
-      [quizId]
-    );
+    const quiz = quizzes[0];
+    quiz.questions = typeof quiz.questions === 'string'
+      ? JSON.parse(quiz.questions)
+      : quiz.questions || [];
 
-    res.status(200).json({
-      data: {
-        ...quizzes[0],
-        questions
-      }
-    });
+    res.status(200).json({ data: quiz });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -66,12 +67,20 @@ exports.getQuizQuestions = async (req, res) => {
   try {
     const quizId = req.params.quizId;
 
-    const [questions] = await pool.query(
-      'SELECT * FROM quiz_questions WHERE quizId = ? ORDER BY questionOrder',
+    const [quizzes] = await pool.query(
+      'SELECT questions FROM quizzes WHERE id = ?',
       [quizId]
     );
 
-    res.status(200).json({ data: questions });
+    if (quizzes.length === 0) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+
+    const questions = typeof quizzes[0].questions === 'string'
+      ? JSON.parse(quizzes[0].questions)
+      : quizzes[0].questions || [];
+
+    res.status(200).json(questions);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -91,8 +100,8 @@ exports.submitQuizResponse = async (req, res) => {
     const totalScore = Object.keys(answers).length * 10; // Simple scoring
 
     await pool.query(
-      'INSERT INTO quiz_questions (id, quizId, studentId, answers, score, completedAt) VALUES (?, ?, ?, ?, ?, ?)',
-      [resultId, quizId, studentId, JSON.stringify(answers), totalScore, new Date()]
+      'INSERT INTO quizresponses (id, studentId, quizId, answers, score, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [resultId, studentId, quizId, JSON.stringify(answers), totalScore, new Date(), new Date()]
     );
 
     res.status(201).json({
@@ -121,17 +130,12 @@ exports.createQuiz = async (req, res) => {
       [quizId, title, description, year || new Date().getFullYear()]
     );
 
-    // Insert questions
-    if (questions && Array.isArray(questions)) {
-      for (let i = 0; i < questions.length; i++) {
-        const q = questions[i];
-        const questionId = uuidv4();
-        await pool.query(
-          'INSERT INTO quiz_questions (id, quizId, question, questionType, options, questionOrder) VALUES (?, ?, ?, ?, ?, ?)',
-          [questionId, quizId, q.question, q.questionType, JSON.stringify(q.options), i + 1]
-        );
-      }
-    }
+    // Save questions as JSON in the quizzes table
+    const questionsPayload = questions && Array.isArray(questions) ? questions : [];
+    await pool.query(
+      'UPDATE quizzes SET questions = ? WHERE id = ?',
+      [JSON.stringify(questionsPayload), quizId]
+    );
 
     res.status(201).json({
       message: 'Quiz created successfully',

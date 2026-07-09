@@ -1,4 +1,4 @@
-const pool = require('../config/database');
+const pool = require('../config/dbPool');
 const { v4: uuidv4 } = require('uuid');
 
 // Get all careers

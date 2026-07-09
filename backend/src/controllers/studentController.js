@@ -1,4 +1,4 @@
-const pool = require('../config/database');
+const pool = require('../config/dbPool');
 const { v4: uuidv4 } = require('uuid');
 
 // Get student dashboard
@@ -30,7 +30,7 @@ exports.getAcademicProfile = async (req, res) => {
     const studentId = req.params.studentId;
 
     const [results] = await pool.query(
-      'SELECT * FROM academic_results WHERE studentId = ?',
+      'SELECT * FROM academicresults WHERE studentId = ?',
       [studentId]
     );
 
@@ -58,7 +58,7 @@ exports.getCareerRecommendations = async (req, res) => {
     const studentId = req.params.studentId;
 
     const [recommendations] = await pool.query(
-      `SELECT cr.*, c.title, c.description FROM career_recommendations cr
+      `SELECT cr.*, c.title, c.description FROM careerrecommendations cr
        JOIN careers c ON cr.careerId = c.id
        WHERE cr.studentId = ?`,
       [studentId]

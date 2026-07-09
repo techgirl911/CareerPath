@@ -17,8 +17,10 @@ router.get('/:parentId/child-recommendations', parentController.getChildRecommen
 
 // GET /api/parents/:parentId/child/academic
 router.get('/:parentId/child/academic', parentController.getChildAcademic);
+router.get('/:parentId/child-academic', parentController.getChildAcademic);
 
 // GET /api/parents/:parentId/child/quiz-results
 router.get('/:parentId/child/quiz-results', parentController.getChildQuizResults);
+router.get('/:parentId/child-quiz-results', parentController.getChildQuizResults);
 
 module.exports = router;

@@ -1,4 +1,4 @@
-const User = require('../models/User');
+const { User, Parent, Student } = require('../models');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
@@ -61,6 +61,20 @@ exports.signup = async (req, res) => {
       password: hashedPassword,
       role,
     });
+
+    // Create a role-specific record for students and parents
+    if (role === 'student') {
+      const student = await Student.create({
+        userId: user.id,
+      });
+      console.log('Student record created:', student.id);
+    } else if (role === 'parent') {
+      const parent = await Parent.create({
+        userId: user.id,
+        childrenCount: 0,
+      });
+      console.log('Parent record created:', parent.id);
+    }
 
     console.log('========== SIGNUP SUCCESS ==========');
     console.log('User created:', user.fullName);

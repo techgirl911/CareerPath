@@ -28,7 +28,7 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: 'Admins',
+      tableName: 'admins',
       timestamps: true,
     }
   );

@@ -1,4 +1,4 @@
-const pool = require('../config/database');
+const pool = require('../config/dbPool');
 const { v4: uuidv4 } = require('uuid');
 
 // Get admin dashboard
@@ -148,23 +148,20 @@ exports.createQuiz = async (req, res) => {
     }
 
     const quizId = uuidv4();
+    const questionsPayload = questions && Array.isArray(questions) ? questions : [];
 
     await pool.query(
-      'INSERT INTO quizzes (id, title, description, year) VALUES (?, ?, ?, ?)',
-      [quizId, title, description, year || new Date().getFullYear()]
+      'INSERT INTO quizzes (id, title, description, questions, year, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [
+        quizId,
+        title,
+        description,
+        JSON.stringify(questionsPayload),
+        year || new Date().getFullYear(),
+        new Date(),
+        new Date(),
+      ]
     );
-
-    // Insert questions
-    if (questions && Array.isArray(questions)) {
-      for (let i = 0; i < questions.length; i++) {
-        const q = questions[i];
-        const questionId = uuidv4();
-        await pool.query(
-          'INSERT INTO quiz_questions (id, quizId, question, questionType, options, questionOrder) VALUES (?, ?, ?, ?, ?, ?)',
-          [questionId, quizId, q.question, q.questionType, JSON.stringify(q.options), i + 1]
-        );
-      }
-    }
 
     res.status(201).json({
       message: 'Quiz created successfully',
