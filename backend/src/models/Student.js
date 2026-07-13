@@ -18,6 +18,14 @@ module.exports = (sequelize, DataTypes) => {
           key: 'id',
         },
       },
+      parentId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: {
+          model: 'Parents',
+          key: 'id',
+        },
+      },
       gpa: {
         type: DataTypes.FLOAT,
         defaultValue: 0.0,
@@ -32,13 +40,14 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: 'students',
+      tableName: 'Students',
       timestamps: true,
     }
   );
 
   Student.associate = (models) => {
     Student.belongsTo(models.User, { foreignKey: 'userId' });
+    Student.belongsTo(models.Parent, { foreignKey: 'parentId' });
     Student.hasMany(models.AcademicResult, {
       foreignKey: 'studentId',
     });

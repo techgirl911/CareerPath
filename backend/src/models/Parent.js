@@ -1,50 +1,19 @@
-'use strict';
-const { DataTypes } = require('sequelize');
+const express = require('express');
+const router = express.Router();
 
-module.exports = (sequelize, DataTypes) => {
-  const Parent = sequelize.define(
-    'Parent',
-    {
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true,
-      },
-      userId: {
-        type: DataTypes.UUID,
-        allowNull: false,
-        references: {
-          model: 'Users',
-          key: 'id',
-        },
-      },
-      childId: {
-        type: DataTypes.UUID,
-        allowNull: true,
-        references: {
-          model: 'Students',
-          key: 'id',
-        },
-      },
-      relationship: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      childrenCount: {
-        type: DataTypes.INTEGER,
-        defaultValue: 0,
-      },
-    },
-    {
-      tableName: 'parents',
-      timestamps: true,
-    }
-  );
+const authMiddleware = (req, res, next) => next();
+router.use(authMiddleware);
 
-  Parent.associate = (models) => {
-    Parent.belongsTo(models.User, { foreignKey: 'userId' });
-    Parent.belongsTo(models.Student, { foreignKey: 'childId' });
-  };
+router.get('/:parentId/child', (req, res) => {
+  res.json({ id: 'child-1', fullName: 'Child', email: 'child@example.com' });
+});
 
-  return Parent;
-};
+router.get('/:parentId/child-recommendations', (req, res) => {
+  res.json({ recommendations: [] });
+});
+
+router.get('/:parentId/child-academic', (req, res) => {
+  res.json({ academicResults: [] });
+});
+
+module.exports = router;

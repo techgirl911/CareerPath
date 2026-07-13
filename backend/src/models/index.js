@@ -1,62 +1,52 @@
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
 const Sequelize = require('sequelize');
-const basename = path.basename(__filename);
-const env = process.env.NODE_ENV || 'development';
-const config = require('../config/database')[env];
-const db = {};
+const config = require('../config/database');
 
-console.log('========== DATABASE CONFIG ==========');
-console.log('Environment:', env);
-console.log('Host:', config.host);
-console.log('Database:', config.database);
-console.log('Dialect:', config.dialect);
-console.log('=====================================');
+const dbConfig = config.development;
 
-// Create connection
 const sequelize = new Sequelize(
-  config.database,
-  config.username,
-  config.password,
+  dbConfig.database,
+  dbConfig.username,
+  dbConfig.password,
   {
-    host: config.host,
-    dialect: config.dialect,
-    logging: config.logging,
+    host: dbConfig.host,
+    dialect: dbConfig.dialect,
+    logging: dbConfig.logging,
   }
 );
 
-// Load all models
-fs.readdirSync(__dirname)
-  .filter((file) => {
-    return (
-      file.indexOf('.') !== 0 &&
-      file !== basename &&
-      file.slice(-3) === '.js'
-    );
-  })
-  .forEach((file) => {
-    const model = require(path.join(__dirname, file))(
-      sequelize,
-      Sequelize.DataTypes
-    );
-    db[model.name] = model;
+const db = {};
+
+// Manually load models
+try {
+  db.User = require('./User')(sequelize, Sequelize.DataTypes);
+  db.Student = require('./Student')(sequelize, Sequelize.DataTypes);
+  db.Parent = require('./Parent')(sequelize, Sequelize.DataTypes);
+  db.Career = require('./Career')(sequelize, Sequelize.DataTypes);
+  db.CareerRecommendation = require('./CareerRecommendation')(sequelize, Sequelize.DataTypes);
+  db.AcademicResult = require('./AcademicResult')(sequelize, Sequelize.DataTypes);
+  db.Quiz = require('./Quiz')(sequelize, Sequelize.DataTypes);
+  db.QuizResponse = require('./QuizResponse')(sequelize, Sequelize.DataTypes);
+  db.Admin = require('./Admin')(sequelize, Sequelize.DataTypes);
+
+  // Associate
+  Object.keys(db).forEach(modelName => {
+    if (db[modelName].associate) {
+      db[modelName].associate(db);
+    }
   });
 
-// Call associate on each model
-Object.keys(db).forEach((modelName) => {
-  if (db[modelName].associate) {
-    db[modelName].associate(db);
-  }
-});
+  console.log('✅ All models loaded successfully');
+} catch (error) {
+  console.log('❌ Error loading models:', error.message);
+}
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-// Sync database
-sequelize
-  .authenticate()
+// Test connection
+sequelize.authenticate()
   .then(() => {
     console.log('✅ Database connection successful');
     return sequelize.sync({ alter: true });
@@ -64,8 +54,8 @@ sequelize
   .then(() => {
     console.log('✅ Database synced successfully');
   })
-  .catch((err) => {
-    console.error('❌ Database error:', err.message);
+  .catch(err => {
+    console.log('❌ Database error:', err.message);
   });
 
 module.exports = db;
