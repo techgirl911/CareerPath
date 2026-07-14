@@ -1,15 +1,15 @@
+// ignore_for_file: avoid_print
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../services/auth_service.dart';
+import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../app_colors.dart';
+import '../app_constants.dart';
 
 class LoginScreen extends StatefulWidget {
   final String userRole;
 
-  const LoginScreen({
-    required this.userRole,
-    Key? key,
-  }) : super(key: key);
+  const LoginScreen({super.key, required this.userRole});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -18,114 +18,103 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
 
   bool _obscurePassword = true;
   bool _isLoading = false;
-  String? _errorMessage;
+  String? _error;
 
-  final _authService = AuthService();
+  late Dio _dio;
 
   @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _setupDio();
   }
 
-  Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
+  void _setupDio() {
+    _dio = Dio();
+    _dio.options.baseUrl = AppConstants.baseUrl;
+    _dio.options.connectTimeout = const Duration(seconds: 30);
+    _dio.options.receiveTimeout = const Duration(seconds: 30);
+  }
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+  Future<void> _login() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      setState(() => _error = 'Please enter email and password');
+      return;
+    }
 
     try {
+      setState(() => _isLoading = true);
       print('========== LOGIN START ==========');
-      print('Email: ${_emailController.text.trim()}');
+      print('Email: ${_emailController.text}');
       print('Expected Role (from selection): ${widget.userRole}');
 
-      final user = await _authService.login(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
+      final response = await _dio.post(
+        ApiEndpoints.login,
+        data: {
+          'email': _emailController.text,
+          'password': _passwordController.text,
+        },
       );
 
-      print('========== LOGIN SUCCESS ==========');
-      print('User Full Name: ${user.fullName}');
-      print('User Email: ${user.email}');
-      print('User Role (from backend): ${user.role}');
-      print('User ID: ${user.id}');
+      print('========== LOGIN RESPONSE ==========');
+      print('Status: ${response.statusCode}');
+      print('Data: ${response.data}');
 
-      if (!mounted) return;
+      if (response.statusCode == 200) {
+        final token = response.data['token'];
+        final user = response.data['user'];
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Welcome ${user.fullName}!'),
-          backgroundColor: AppColors.success,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+        print('========== LOGIN SUCCESS ==========');
+        print('User Full Name: ${user['fullName']}');
+        print('User Email: ${user['email']}');
+        print('User Role (from backend): ${user['role']}');
+        print('User ID: ${user['id']}');
 
-      Future.delayed(const Duration(milliseconds: 800), () {
-        if (mounted) {
-          print('========== NAVIGATION DECISION ==========');
-          print('User Role from backend: ${user.role}');
-          print('Selected role at login: ${widget.userRole}');
+        // Save token
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(AppConstants.tokenKey, token);
+        print('Token saved to SharedPreferences');
 
-          final encodedName = Uri.encodeComponent(user.fullName);
-          final encodedEmail = Uri.encodeComponent(user.email);
+        print('========== NAVIGATION DECISION ==========');
+        print('Selected role at login: ${widget.userRole}');
+        print('role: ${user['role']}');
 
-          // Use role from backend response
-          if (user.role == 'student') {
-            print('Navigating to STUDENT dashboard');
-            final route =
-                '/student-dashboard?studentId=${user.id}&userName=$encodedName&userEmail=$encodedEmail';
-            print('Route: $route');
-            context.go(route);
-          } else if (user.role == 'parent') {
-            print('Navigating to PARENT dashboard');
-            final route =
-                '/parent-dashboard?parentId=${user.id}&parentName=$encodedName';
-            print('Route: $route');
-            context.go(route);
-          } else if (user.role == 'admin') {
-            print('Navigating to ADMIN dashboard');
-            final route =
-                '/admin-dashboard?adminId=${user.id}&adminName=$encodedName';
-            print('Route: $route');
-            context.go(route);
-          } else {
-            print('ERROR: Unknown role: ${user.role}');
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Error: Unknown user role'),
-                backgroundColor: Color(0xFFEF4444),
-              ),
-            );
-          }
+        // Route based on actual role from backend
+        if (user['role'] == 'student') {
+          print('Navigating to STUDENT dashboard');
+          context.go(
+            '/student-dashboard?studentId=${user['id']}&userName=${user['fullName']}&userEmail=${user['email']}',
+          );
+        } else if (user['role'] == 'parent') {
+          print('Navigating to PARENT dashboard');
+          context.go(
+            '/parent-dashboard?parentId=${user['id']}&parentName=${user['fullName']}',
+          );
+        } else if (user['role'] == 'admin') {
+          print('Navigating to ADMIN dashboard');
+          context.go(
+            '/admin-dashboard?adminId=${user['id']}&adminName=${user['fullName']}',
+          );
+        } else {
+          print('Unknown role: ${user['role']}');
+          setState(() => _error = 'Unknown user role');
         }
+      } else {
+        setState(() => _error = 'Login failed');
+      }
+    } on DioException catch (e) {
+      print('DIO Error: ${e.message}');
+      print('Response: ${e.response?.data}');
+      setState(() {
+        _error = e.response?.data['message'] ?? 'Login error: ${e.message}';
       });
     } catch (e) {
-      print('========== LOGIN ERROR ==========');
-      print('Error Type: ${e.runtimeType}');
-      print('Error Message: $e');
-
-      setState(() {
-        _errorMessage = e.toString();
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Login failed: $e'),
-          backgroundColor: AppColors.error,
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      print('Error: $e');
+      setState(() => _error = 'Error: $e');
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      setState(() => _isLoading = false);
     }
   }
 
@@ -135,265 +124,133 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         title: const Text('Sign In'),
         elevation: 0,
-        centerTitle: false,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Welcome Back',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Sign in to continue as ${widget.userRole}',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 24),
+
+            // Error message
+            if (_error != null)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.error),
+                ),
+                child: Text(
+                  _error!,
+                  style: TextStyle(color: AppColors.error),
+                ),
+              ),
+            const SizedBox(height: 16),
+
+            // Email
+            TextField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(
+                labelText: 'Email Address',
+                prefixIcon: const Icon(Icons.email),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Password
+            TextField(
+              controller: _passwordController,
+              obscureText: _obscurePassword,
+              decoration: InputDecoration(
+                labelText: 'Password',
+                prefixIcon: const Icon(Icons.lock),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                  ),
+                  onPressed: () {
+                    setState(() => _obscurePassword = !_obscurePassword);
+                  },
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Sign In Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _login,
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Sign In'),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Sign Up Link
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Header
-                Text(
-                  'Welcome Back',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Sign in to continue as ${widget.userRole}',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[600],
-                      ),
-                ),
-                const SizedBox(height: 32),
-
-                // Error Message
-                if (_errorMessage != null)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    margin: const EdgeInsets.only(bottom: 24),
-                    decoration: BoxDecoration(
-                      color: AppColors.error.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.error),
+                const Text('Don\'t have an account? '),
+                GestureDetector(
+                  onTap: () => context.go('/signup?role=${widget.userRole}'),
+                  child: Text(
+                    'Sign Up',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
                     ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.error_outline, color: AppColors.error),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            _errorMessage!,
-                            style: TextStyle(
-                              color: AppColors.error,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                // Email Field
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    labelText: 'Email Address',
-                    hintText: 'student@example.com',
-                    prefixIcon: const Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value?.isEmpty ?? true) {
-                      return 'Email is required';
-                    }
-                    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value!)) {
-                      return 'Enter a valid email address';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                // Password Field
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    hintText: 'Enter your password',
-                    prefixIcon: const Icon(Icons.lock_outlined),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                      ),
-                      onPressed: () {
-                        setState(() => _obscurePassword = !_obscurePassword);
-                      },
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value?.isEmpty ?? true) {
-                      return 'Password is required';
-                    }
-                    if (value!.length < 6) {
-                      return 'Password must be at least 6 characters';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 8),
-
-                // Forgot Password Link
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Password reset coming soon!'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                    child: const Text('Forgot Password?'),
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // Login Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleLogin,
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation(Colors.white),
-                            ),
-                          )
-                        : const Text(
-                            'Sign In',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Sign Up Link
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Don\'t have an account? ',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        print(
-                            'Navigating to signup with role: ${widget.userRole}');
-                        context.push('/signup?role=${widget.userRole}');
-                      },
-                      child: const Text(
-                        'Sign Up',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Back Button
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      print('Going back to role selection');
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(Icons.arrow_back),
-                    label: const Text('Back to Role Selection'),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Demo Credentials Info
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(8),
-                    border:
-                        Border.all(color: AppColors.primary.withOpacity(0.2)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Demo Credentials',
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      const SizedBox(height: 8),
-                      if (widget.userRole == 'student') ...[
-                        const Text(
-                          'Email: student@example.com',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                        const Text(
-                          'Password: password123',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ] else if (widget.userRole == 'parent') ...[
-                        const Text(
-                          'Email: parent@example.com',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                        const Text(
-                          'Password: password123',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ] else ...[
-                        const Text(
-                          'Email: admin@example.com',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                        const Text(
-                          'Password: password123',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                        const Text(
-                          'Admin Code: ADMIN2024',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ],
-                    ],
                   ),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 24),
+
+            // Back to role selection
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => context.go('/'),
+                child: const Text('Back to Role Selection'),
+              ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 }
